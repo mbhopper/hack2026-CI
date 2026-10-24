@@ -1,0 +1,219 @@
+.cutscene {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #000;
+  color: var(--color-text);
+}
+
+.cutscene__stage {
+  position: relative;
+  overflow: hidden;
+  font-family: var(--font-pixel);
+}
+
+.cutscene__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.cutscene__ready {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--px) * 8);
+  padding: 16px;
+  text-align: center;
+}
+
+.cutscene__ready-kicker {
+  margin: 0;
+  font-size: clamp(14px, calc(var(--px) * 8), 40px);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.cutscene__ready-hint {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--color-text-dim);
+}
+
+.cutscene__overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.cutscene__caption {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 0 calc(var(--px) * 16);
+  text-align: center;
+  text-shadow: 0 calc(var(--px) * 1) 0 #000;
+  animation: cutscene-fade 0.8s ease both;
+}
+
+.cutscene__caption--md {
+  font-size: clamp(10px, calc(var(--px) * 6), 32px);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.8;
+}
+
+.cutscene__caption--xl {
+  font-size: clamp(18px, calc(var(--px) * 16), 88px);
+  text-transform: uppercase;
+  color: var(--color-text);
+}
+
+.cutscene__lap {
+  position: absolute;
+  top: calc(var(--px) * 8);
+  left: calc(var(--px) * 8);
+  margin: 0;
+  padding: calc(var(--px) * 2) calc(var(--px) * 4);
+  font-size: clamp(9px, calc(var(--px) * 5), 24px);
+  background: rgba(0, 0, 0, 0.7);
+  border-left: calc(var(--px) * 1) solid var(--color-accent);
+}
+
+.cutscene__hud {
+  position: absolute;
+  top: calc(var(--px) * 8);
+  right: calc(var(--px) * 8);
+  display: grid;
+  gap: calc(var(--px) * 3);
+  padding: calc(var(--px) * 3) calc(var(--px) * 4);
+  background: rgba(0, 0, 0, 0.75);
+  border: calc(var(--px) * 0.5) solid var(--color-surface-border);
+  text-align: right;
+}
+
+.cutscene__speed {
+  font-size: clamp(12px, calc(var(--px) * 9), 48px);
+}
+
+.cutscene__speed small {
+  font-size: 0.45em;
+  color: var(--color-text-muted);
+}
+
+.cutscene__heat {
+  display: block;
+  width: calc(var(--px) * 56);
+  height: calc(var(--px) * 3);
+  background: #1f2a25;
+}
+
+.cutscene__heat span {
+  display: block;
+  height: 100%;
+  background: var(--color-warning);
+}
+
+.cutscene__heat span[data-hot='true'] {
+  background: var(--color-danger);
+}
+
+.cutscene__photo {
+  position: absolute;
+  top: calc(var(--px) * 144);
+  left: 0;
+  right: 0;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: clamp(11px, calc(var(--px) * 5), 22px);
+  text-align: center;
+  color: var(--color-text-muted);
+  animation: cutscene-fade 0.8s ease both;
+}
+
+.cutscene__bottom {
+  position: absolute;
+  left: calc(var(--px) * 8);
+  right: calc(var(--px) * 8);
+  bottom: calc(var(--px) * 6);
+  display: grid;
+  justify-items: center;
+  gap: calc(var(--px) * 2);
+}
+
+.cutscene__sound {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: clamp(11px, calc(var(--px) * 4.5), 20px);
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+
+.cutscene__subtitle {
+  margin: 0;
+  padding: calc(var(--px) * 2) calc(var(--px) * 5);
+  font-family: var(--font-body);
+  font-size: clamp(12px, calc(var(--px) * 6), 28px);
+  text-align: center;
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.cutscene__subtitle b {
+  color: var(--color-accent-soft);
+}
+
+.cutscene__paused {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  font-size: clamp(14px, calc(var(--px) * 10), 48px);
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.cutscene__controls {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  gap: 8px;
+}
+
+.cutscene__control {
+  padding: 10px 14px;
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--color-text-muted);
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.cutscene__control:hover {
+  color: var(--color-accent-soft);
+  border-color: var(--color-accent-soft);
+}
+
+@keyframes cutscene-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cutscene__caption,
+  .cutscene__photo {
+    animation: none;
+  }
+}

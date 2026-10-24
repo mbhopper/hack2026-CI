@@ -1,26 +1,21 @@
-import { Button } from '../components/Button.tsx'
-import { PageShell } from '../components/PageShell.tsx'
+import { useNavigate } from 'react-router-dom'
+import { Cutscene } from '../cutscene/Cutscene.tsx'
 import { useAuth } from '../auth/useAuth.ts'
-import './IntroPage.css'
+import { saveProgress } from '../game/progress.ts'
+import { routes } from '../routes.ts'
 
-/**
- * Заглушка под катсцену: сюда мы попадаем сразу после входа.
- */
+/** Вступительная катсцена: сюда попадаем сразу после входа */
 export function IntroPage() {
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
+  const navigate = useNavigate()
 
   return (
-    <PageShell headerSlot={<span>Круг 1/3</span>}>
-      <div className="intro">
-        <p className="intro__disclaimer">Основано на реальных событиях</p>
-        <h1 className="intro__title">Катсцена</h1>
-        <p className="intro__lead">
-          Детектив {user?.nickname}, добро пожаловать на трассу. Здесь появится вступительный ролик.
-        </p>
-        <Button variant="ghost" onClick={() => void logout()}>
-          Выйти
-        </Button>
-      </div>
-    </PageShell>
+    <Cutscene
+      playerName={user?.nickname ?? 'детектив'}
+      onFinish={() => {
+        if (user) saveProgress(user.id, { introSeen: true })
+        navigate(routes.track)
+      }}
+    />
   )
 }
