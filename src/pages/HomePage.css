@@ -53,6 +53,13 @@
   color: var(--color-text-muted);
 }
 
+/* стартовая прямая на фоне проходит как раз под этими строками — подкладываем фон */
+.home__guest a,
+.home__settings .difficulty__text {
+  padding: 2px 8px;
+  background: var(--color-bg);
+}
+
 .home__guest a:hover {
   color: var(--color-accent-soft);
 }

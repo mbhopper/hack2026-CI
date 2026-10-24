@@ -43,7 +43,10 @@ const toPublic = ({ passwordHash: _passwordHash, ...user }: StoredUser): User =>
 
 function issueToken(userId: string): string {
   const token = crypto.randomUUID()
-  const tokens = readJson<Record<string, string>>(TOKENS_KEY, {})
+  // в браузере у игрока одна сессия: прежние токены этого игрока больше не нужны
+  const tokens = Object.fromEntries(
+    Object.entries(readJson<Record<string, string>>(TOKENS_KEY, {})).filter(([, owner]) => owner !== userId),
+  )
   tokens[token] = userId
   writeJson(TOKENS_KEY, tokens)
   return token

@@ -10,6 +10,7 @@ export function validateNickname(value: string): string | undefined {
 
 export function validatePassword(value: string): string | undefined {
   if (!value) return 'Введите пароль'
+  if (!value.trim()) return 'Пароль не может состоять из одних пробелов'
   if (value.length < PASSWORD_MIN_LENGTH) return `Минимум ${PASSWORD_MIN_LENGTH} символов`
   return undefined
 }

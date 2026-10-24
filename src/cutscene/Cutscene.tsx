@@ -16,11 +16,21 @@ interface CutsceneProps {
 
 type Phase = 'ready' | 'playing' | 'paused'
 
-/** Целый масштаб, чтобы пиксели оставались квадратными */
+/** Высота полосы под кнопками «Пауза / Пропустить» */
+const CONTROLS_SPACE = 64
+
+/**
+ * Целый масштаб, чтобы пиксели оставались квадратными. Оставляем место под
+ * кнопками, чтобы они не закрывали субтитры, если сцена от этого не мельчает до 1×.
+ */
 function useIntegerScale() {
   const [scale, setScale] = useState(1)
   useEffect(() => {
-    const update = () => setScale(Math.max(1, Math.floor(Math.min(window.innerWidth / W, window.innerHeight / H))))
+    const update = () => {
+      const fit = (height: number) => Math.floor(Math.min(window.innerWidth / W, height / H))
+      const roomy = fit(window.innerHeight - CONTROLS_SPACE)
+      setScale(Math.max(1, roomy >= 2 ? roomy : fit(window.innerHeight)))
+    }
     update()
     window.addEventListener('resize', update)
     return () => window.removeEventListener('resize', update)
