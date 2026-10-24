@@ -1,4 +1,3 @@
-import { outfits, type Palette, type PersonKind } from './sprites.ts'
 
 /** Точка осмотра. Координаты — в пикселях сцены 320×180. */
 export interface Clue {
@@ -73,8 +72,6 @@ export interface Suspect {
   name: string
   role: string
   summary: string
-  sprite: PersonKind
-  outfit: Palette
 }
 
 export const suspects: Suspect[] = [
@@ -83,23 +80,17 @@ export const suspects: Suspect[] = [
     name: 'Пилот №22',
     role: 'Победитель гонки',
     summary: 'Лучший друг погибшего и его вечный соперник. В момент аварии сам был за рулём.',
-    sprite: 'pilot',
-    outfit: outfits.pilot22,
   },
   {
     id: 'mechanic',
     name: 'Механик бокса №7',
     role: 'Механик',
     summary: 'Работал на пит-стопе. Сразу после аварии его увезли в следственный изолятор.',
-    sprite: 'mechanic',
-    outfit: outfits.mechanic7,
   },
   {
     id: 'sponsor',
     name: 'Спонсор команды',
     role: 'Спонсор',
     summary: 'Вложил в команду миллионы. Уверяет, что всю гонку просидел на трибуне.',
-    sprite: 'sponsor',
-    outfit: outfits.sponsor,
   },
 ]

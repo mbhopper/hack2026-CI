@@ -1,133 +1,188 @@
 /**
- * Процедурные фоны 320×180. Всё рисуется прямоугольниками по целым
- * пикселям, поэтому после масштабирования остаётся «пиксельным».
+ * Фоны катсцены 320×180 в новом стиле. Всё статичное собирается один раз
+ * в offscreen-холсты, за кадр рисуются только готовые слои.
  */
+import { cone, glow, pixelEllipse } from './lighting.ts'
+import { asphalt, crowdColors, grass, kerb, lamp, metal, night } from './palette.ts'
+import { H, OUTLINE, W, cached, drawNumber, fill, mix, offscreen, outline, rng } from './pixels.ts'
 
-export const W = 320
-export const H = 180
+export { H, W, fill, rng }
 
-/** Высота горизонта: ниже начинается трибуна, ещё ниже — асфальт */
 export const TRACK_TOP = 118
 export const TRACK_BOTTOM = 162
-export const LANE_NEAR = 146
-export const LANE_FAR = 130
+export const LANE_NEAR = 156
+export const LANE_FAR = 136
 
-export function rng(seed: number) {
-  let a = seed
-  return () => {
-    a |= 0
-    a = (a + 0x6d2b79f5) | 0
-    let t = Math.imul(a ^ (a >>> 15), 1 | a)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+const SKIN = '#f3e2c0'
+const SKIN_SHADE = '#d9b98f'
+const EYE = '#1a1d22'
+
+function wrap(value: number, size: number) {
+  return ((value % size) + size) % size
+}
+
+/** Повторяющаяся лента со сдвигом для параллакса */
+function drawStrip(ctx: CanvasRenderingContext2D, image: HTMLCanvasElement, offset: number, y: number) {
+  for (let x = -Math.round(wrap(offset, image.width)); x < W; x += image.width) ctx.drawImage(image, x, y)
+}
+
+const FLOODLIGHTS = [40, 150, 260]
+
+function buildSky() {
+  const { canvas, ctx } = offscreen(W, 64)
+  night.sky.forEach((color, i) => fill(ctx, color, 0, i * 7, W, 7))
+  fill(ctx, night.sky[night.sky.length - 1], 0, 35, W, 29)
+  const rand = rng(7)
+  for (let i = 0; i < 34; i++) fill(ctx, rand() > 0.8 ? night.starBright : night.star, rand() * W, rand() * 28, 1, 1)
+
+  for (const x of FLOODLIGHTS) {
+    glow(ctx, x + 1, 9, 18, 9)
+    const mast = offscreen(16, 40)
+    fill(mast.ctx, metal.dark, 7, 8, 2, 32)
+    fill(mast.ctx, metal.base, 7, 8, 1, 32)
+    fill(mast.ctx, metal.base, 1, 3, 14, 5)
+    fill(mast.ctx, metal.light, 1, 3, 14, 1)
+    for (let i = 0; i < 3; i++) fill(mast.ctx, lamp.warm, 2 + i * 4, 5, 3, 2)
+    fill(mast.ctx, lamp.core, 2, 5, 1, 1)
+    outline(mast.canvas)
+    ctx.drawImage(mast.canvas, x - 7, 2)
   }
+  return canvas
 }
 
-function offscreen(width: number, height: number) {
-  const canvas = document.createElement('canvas')
-  canvas.width = width
-  canvas.height = height
-  return { canvas, ctx: canvas.getContext('2d')! }
-}
-
-const cache = new Map<string, HTMLCanvasElement>()
-function cached(key: string, make: () => HTMLCanvasElement) {
-  let hit = cache.get(key)
-  if (!hit) {
-    hit = make()
-    cache.set(key, hit)
-  }
-  return hit
-}
-
-export function fill(ctx: CanvasRenderingContext2D, color: string, x: number, y: number, w: number, h: number) {
-  ctx.fillStyle = color
-  ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h))
-}
-
-/** Небо полосами: ночью тёмно-зелёное, днём через два дня — серое и пасмурное */
-export function drawSky(ctx: CanvasRenderingContext2D, mood: 'night' | 'overcast' = 'night') {
-  const bands =
-    mood === 'night'
-      ? ['#070a09', '#0a0f0d', '#0d1411', '#111a16', '#16211c']
-      : ['#3a4146', '#454c51', '#50585c', '#5c6467', '#677073']
-  bands.forEach((color, i) => fill(ctx, color, 0, i * 12, W, 12))
-  fill(ctx, bands[bands.length - 1], 0, 60, W, 60)
-
-  if (mood === 'night') {
-    const rand = rng(7)
-    for (let i = 0; i < 40; i++) {
-      fill(ctx, rand() > 0.7 ? '#a9b3ae' : '#4a5550', rand() * W, rand() * 34, 1, 1)
-    }
-    // прожекторы над трибуной
-    for (const x of [40, 150, 260]) {
-      fill(ctx, '#2a332f', x, 6, 2, 30)
-      fill(ctx, '#e8ece9', x - 4, 4, 10, 3)
-      fill(ctx, '#f6f0c8', x - 3, 7, 8, 1)
-    }
-  }
+export function drawSky(ctx: CanvasRenderingContext2D) {
+  ctx.drawImage(cached('sky', buildSky), 0, 0)
 }
 
 export interface StandsOptions {
   /** Сидит ли спонсор в VIP-ложе */
   sponsorInBox: boolean
-  /** Есть ли на трибунах зрители (через два дня — пусто) */
+  /** Есть ли на трибунах зрители */
   crowd: boolean
 }
 
 export const STANDS_WIDTH = 640
-const STANDS_HEIGHT = 78
+const STANDS_HEIGHT = 80
 /** Где на ленте трибуны стоит VIP-ложа */
 export const VIP_X = 430
+const VIP_W = 82
+const VIP_SEATS = 5
+
+/** Гость в ложе: чиби 8×11, глаза — столбики 1×2 */
+function guest(ctx: CanvasRenderingContext2D, x: number, y: number, hair: string, suit: string) {
+  const { canvas, ctx: g } = offscreen(10, 13)
+  fill(g, hair, 2, 1, 6, 2)
+  fill(g, SKIN, 2, 3, 6, 4)
+  fill(g, SKIN_SHADE, 7, 4, 1, 3)
+  fill(g, hair, 1, 2, 1, 3)
+  fill(g, EYE, 3, 4, 1, 2)
+  fill(g, EYE, 6, 4, 1, 2)
+  fill(g, suit, 1, 7, 8, 5)
+  fill(g, mix(suit, '#ffffff', 0.18), 1, 7, 3, 1)
+  outline(canvas)
+  ctx.drawImage(canvas, x - 1, y - 1)
+}
+
+/** Спонсор: лысина, седые виски, золотые очки, красный галстук */
+function sponsor(ctx: CanvasRenderingContext2D, x: number, y: number) {
+  const { canvas, ctx: g } = offscreen(10, 13)
+  fill(g, SKIN, 2, 1, 6, 6)
+  fill(g, '#fff8e6', 3, 1, 2, 1)
+  fill(g, '#c8ced0', 1, 3, 1, 3)
+  fill(g, '#c8ced0', 8, 3, 1, 3)
+  fill(g, SKIN_SHADE, 7, 4, 1, 3)
+  fill(g, '#c9a227', 2, 4, 6, 1)
+  fill(g, EYE, 3, 5, 1, 1)
+  fill(g, EYE, 6, 5, 1, 1)
+  fill(g, '#2a2f36', 1, 7, 8, 5)
+  fill(g, '#3e4550', 1, 7, 3, 1)
+  fill(g, '#e8ece9', 4, 7, 2, 2)
+  fill(g, '#d93a3a', 4, 8, 2, 3)
+  outline(canvas)
+  ctx.drawImage(canvas, x - 1, y - 1)
+}
 
 function buildStands({ sponsorInBox, crowd }: StandsOptions) {
   const { canvas, ctx } = offscreen(STANDS_WIDTH, STANDS_HEIGHT)
   const rand = rng(crowd ? 42 : 43)
-  const crowdColors = ['#c62a2f', '#e8ece9', '#1d3a78', '#e8c43a', '#3dbf72', '#e07b2e', '#a9b3ae', '#7a4bb0']
 
   // крыша и опоры
-  fill(ctx, '#1b2420', 0, 0, STANDS_WIDTH, 6)
-  fill(ctx, '#2a3530', 0, 6, STANDS_WIDTH, 2)
-  for (let x = 8; x < STANDS_WIDTH; x += 64) fill(ctx, '#1b2420', x, 8, 3, STANDS_HEIGHT - 8)
+  fill(ctx, metal.dark, 0, 0, STANDS_WIDTH, 6)
+  fill(ctx, metal.base, 0, 0, STANDS_WIDTH, 1)
+  fill(ctx, OUTLINE, 0, 6, STANDS_WIDTH, 1)
+  fill(ctx, '#0e1316', 0, 7, STANDS_WIDTH, 3)
 
-  // ряды сидений
+  // ряды сидений; верхние в тени, нижние под прожекторами
   for (let row = 0; row < 8; row++) {
-    const y = 12 + row * 8
-    fill(ctx, row % 2 ? '#1a2320' : '#1e2925', 0, y, STANDS_WIDTH, 8)
-    for (let x = 2; x < STANDS_WIDTH; x += 4) {
-      if (x > VIP_X - 6 && x < VIP_X + 70 && row < 5) continue
-      fill(ctx, '#2c3833', x, y + 5, 3, 2)
-      if (crowd && rand() > 0.12) {
-        const color = crowdColors[Math.floor(rand() * crowdColors.length)]
-        fill(ctx, '#e2b48c', x, y + 1, 2, 2)
-        fill(ctx, color, x, y + 3, 3, 3)
-      }
+    const y = 10 + row * 7
+    const dim = row < 3 ? 0.62 : row < 6 ? 0.42 : 0.22
+    fill(ctx, mix(row % 2 ? '#1a2328' : '#1e282e', OUTLINE, dim), 0, y, STANDS_WIDTH, 7)
+    fill(ctx, mix('#2c3840', OUTLINE, dim), 0, y + 6, STANDS_WIDTH, 1)
+    for (let x = 1; x < STANDS_WIDTH; x += 5) {
+      if (x > VIP_X - 10 && x < VIP_X + VIP_W + 4 && row < 7) continue
+      if (!crowd || rand() < 0.2) continue
+      const shirt = crowdColors[Math.floor(rand() * crowdColors.length)]
+      const hair = ['#3a2618', '#1c1618', '#c9a04a', '#5a3a22'][Math.floor(rand() * 4)]
+      fill(ctx, mix(hair, OUTLINE, dim), x, y + 1, 3, 1)
+      fill(ctx, mix(SKIN_SHADE, OUTLINE, dim), x, y + 2, 3, 2)
+      fill(ctx, mix(shirt, OUTLINE, dim), x, y + 4, 4, 2)
     }
   }
 
-  // VIP-ложа: стекло, табличка, кресла
-  fill(ctx, '#0f1513', VIP_X - 6, 10, 76, 44)
-  fill(ctx, '#3dbf72', VIP_X - 6, 10, 76, 2)
-  fill(ctx, '#22302a', VIP_X - 4, 14, 72, 36)
-  fill(ctx, '#2f4a3f', VIP_X - 2, 16, 68, 20)
-  fill(ctx, '#e8ece9', VIP_X + 22, 12, 20, 1)
-  for (let i = 0; i < 5; i++) {
-    const x = VIP_X + 4 + i * 12
-    fill(ctx, '#5a1d22', x, 38, 8, 8)
-    fill(ctx, '#8f1f24', x, 38, 8, 3)
-    // гости ложи; среднее кресло — спонсора
+  for (let x = 30; x < STANDS_WIDTH; x += 64) {
+    fill(ctx, OUTLINE, x - 1, 7, 5, 59)
+    fill(ctx, metal.base, x, 7, 3, 58)
+    fill(ctx, metal.light, x, 7, 1, 58)
+  }
+
+  // VIP-ложа: рама, тёплый свет внутри, стекло с бликами
+  const vx = VIP_X - 8
+  fill(ctx, OUTLINE, vx - 1, 9, VIP_W + 2, 50)
+  fill(ctx, metal.base, vx, 10, VIP_W, 48)
+  fill(ctx, metal.light, vx, 10, VIP_W, 1)
+  fill(ctx, '#2a241c', vx + 3, 14, VIP_W - 6, 36)
+  fill(ctx, '#3a3026', vx + 3, 14, VIP_W - 6, 20)
+  fill(ctx, '#c9a227', vx + VIP_W / 2 - 9, 11, 18, 2)
+  for (let i = 0; i < VIP_SEATS; i++) {
+    const lx = vx + 9 + i * 15
+    fill(ctx, metal.dark, lx, 14, 6, 2)
+    fill(ctx, lamp.warm, lx + 1, 16, 4, 1)
+    glow(ctx, lx + 3, 30, 9, 14)
+  }
+
+  for (let i = 0; i < VIP_SEATS; i++) {
+    const sx = vx + 7 + i * 15
     const isSponsorSeat = i === 2
-    if (crowd && (!isSponsorSeat || sponsorInBox)) {
-      fill(ctx, isSponsorSeat ? '#c9cfcc' : '#3a2618', x + 2, 30, 4, 2)
-      fill(ctx, '#e2b48c', x + 2, 32, 4, 3)
-      fill(ctx, isSponsorSeat ? '#2a2f36' : '#4a5550', x + 1, 35, 6, 6)
-      if (isSponsorSeat) fill(ctx, '#d93a3a', x + 4, 35, 1, 4)
+    const seated = crowd && (!isSponsorSeat || sponsorInBox)
+    fill(ctx, OUTLINE, sx - 1, 33, 12, 15)
+    fill(ctx, '#7a1f24', sx, 34, 10, 13)
+    fill(ctx, '#a8343a', sx, 34, 10, 2)
+    fill(ctx, '#5a161a', sx + 8, 36, 2, 11)
+    if (seated) {
+      if (isSponsorSeat) sponsor(ctx, sx + 1, 29)
+      else guest(ctx, sx + 1, 29, ['#3a2618', '#c9a04a', '#1c1618', '#5a3a22', '#c8ced0'][i], i % 2 ? '#3e4550' : '#2a2f36')
     }
   }
-  fill(ctx, '#0f1513', VIP_X - 6, 46, 76, 6)
+  fill(ctx, metal.base, vx + 3, 46, VIP_W - 6, 4)
+  fill(ctx, metal.light, vx + 3, 46, VIP_W - 6, 1)
 
-  // нижний бортик трибуны
-  fill(ctx, '#2a3530', 0, STANDS_HEIGHT - 4, STANDS_WIDTH, 4)
+  // стекло: два косых блика
+  ctx.fillStyle = 'rgba(200, 220, 230, 0.08)'
+  for (let i = 0; i < 18; i++) {
+    ctx.fillRect(vx + 10 + i, 14 + i * 2, 3, 2)
+    ctx.fillRect(vx + 46 + i, 14 + i * 2, 2, 2)
+  }
+
+  // передний бортик трибуны с рекламой
+  fill(ctx, OUTLINE, 0, 65, STANDS_WIDTH, 1)
+  fill(ctx, metal.base, 0, 66, STANDS_WIDTH, 14)
+  fill(ctx, metal.light, 0, 66, STANDS_WIDTH, 1)
+  for (let x = 12; x < STANDS_WIDTH; x += 96) {
+    fill(ctx, OUTLINE, x - 1, 68, 42, 10)
+    fill(ctx, '#1f4a35', x, 69, 40, 8)
+    fill(ctx, '#3dbf72', x + 4, 71, 18, 2)
+    fill(ctx, '#2a8a52', x + 4, 74, 26, 1)
+  }
   return canvas
 }
 
@@ -135,45 +190,66 @@ export function standsCanvas(options: StandsOptions) {
   return cached(`stands-${options.sponsorInBox}-${options.crowd}`, () => buildStands(options))
 }
 
-function wrap(value: number, size: number) {
-  return ((value % size) + size) % size
-}
-
-/** Рисует повторяющуюся ленту со сдвигом */
-function drawStrip(ctx: CanvasRenderingContext2D, image: HTMLCanvasElement, offset: number, y: number) {
-  for (let x = -Math.round(wrap(offset, image.width)); x < W; x += image.width) ctx.drawImage(image, x, y)
-}
-
 function buildBarrier() {
-  const { canvas, ctx } = offscreen(64, 14)
-  fill(ctx, '#3d4a44', 0, 0, 64, 14)
-  fill(ctx, '#a9b3ae', 0, 2, 64, 2)
-  fill(ctx, '#6f7a75', 0, 4, 64, 1)
-  fill(ctx, '#a9b3ae', 0, 7, 64, 2)
-  fill(ctx, '#6f7a75', 0, 9, 64, 1)
-  for (let x = 0; x < 64; x += 16) fill(ctx, '#1f2a25', x, 0, 2, 14)
-  // рекламный щит
-  fill(ctx, '#e8ece9', 22, 1, 20, 12)
-  fill(ctx, '#3dbf72', 24, 3, 16, 3)
-  fill(ctx, '#2a8a52', 24, 7, 10, 2)
+  const { canvas, ctx } = offscreen(128, 16)
+  fill(ctx, '#151b20', 0, 0, 128, 16)
+  const rail = (y: number) => {
+    fill(ctx, OUTLINE, 0, y - 1, 128, 1)
+    fill(ctx, metal.shine, 0, y, 128, 1)
+    fill(ctx, metal.lighter, 0, y + 1, 128, 1)
+    fill(ctx, metal.base, 0, y + 2, 128, 1)
+    fill(ctx, OUTLINE, 0, y + 3, 128, 1)
+  }
+  rail(2)
+  rail(9)
+  for (let x = 6; x < 128; x += 16) {
+    fill(ctx, OUTLINE, x - 1, 0, 4, 16)
+    fill(ctx, metal.base, x, 0, 2, 16)
+    fill(ctx, metal.light, x, 0, 1, 16)
+  }
+  fill(ctx, OUTLINE, 0, 15, 128, 1)
   return canvas
 }
 
 function buildAsphalt() {
-  const { canvas, ctx } = offscreen(64, TRACK_BOTTOM - TRACK_TOP + 18)
+  const height = TRACK_BOTTOM - TRACK_TOP + 18
+  const { canvas, ctx } = offscreen(64, height)
   const rand = rng(11)
-  fill(ctx, '#2b302f', 0, 0, 64, TRACK_BOTTOM - TRACK_TOP)
-  for (let i = 0; i < 60; i++) fill(ctx, rand() > 0.5 ? '#333938' : '#252a29', rand() * 64, rand() * 44, 2, 1)
-  // разметка посередине
-  fill(ctx, '#a9b3ae', 6, 21, 20, 1)
-  // поребрик
+  const road = TRACK_BOTTOM - TRACK_TOP
+  fill(ctx, asphalt.base, 0, 0, 64, road)
+  fill(ctx, asphalt.dark, 0, 0, 64, 2)
+  for (let i = 0; i < 70; i++) fill(ctx, rand() > 0.5 ? asphalt.light : asphalt.dark, rand() * 64, 2 + rand() * (road - 3), 2, 1)
+  fill(ctx, asphalt.line, 8, 22, 18, 1)
+
+  fill(ctx, OUTLINE, 0, road, 64, 1)
   for (let x = 0; x < 64; x += 16) {
-    fill(ctx, '#d93a3a', x, 44, 8, 4)
-    fill(ctx, '#e8ece9', x + 8, 44, 8, 4)
+    fill(ctx, kerb.red, x, road + 1, 8, 3)
+    fill(ctx, kerb.white, x + 8, road + 1, 8, 3)
   }
-  // трава
-  fill(ctx, '#1d3a24', 0, 48, 64, 14)
-  for (let i = 0; i < 30; i++) fill(ctx, '#27502f', rand() * 64, 48 + rand() * 14, 1, 2)
+  fill(ctx, OUTLINE, 0, road + 4, 64, 1)
+  fill(ctx, grass.base, 0, road + 5, 64, height - road - 5)
+  for (let i = 0; i < 26; i++) fill(ctx, rand() > 0.5 ? grass.light : grass.dark, rand() * 64, road + 5 + rand() * 12, 1, 2)
+  return canvas
+}
+
+/** Отблески прожекторов на мокром асфальте: стоят на месте вместе с мачтами */
+function buildReflections() {
+  const { canvas, ctx } = offscreen(W, TRACK_BOTTOM - TRACK_TOP)
+  for (const x of FLOODLIGHTS) {
+    for (let y = 2; y < TRACK_BOTTOM - TRACK_TOP - 2; y++) {
+      if (y % 4 === 3) continue
+      ctx.fillStyle = 'rgba(246, 231, 176, 0.05)'
+      ctx.fillRect(x - 4, y, 10, 1)
+      ctx.fillStyle = 'rgba(246, 231, 176, 0.08)'
+      ctx.fillRect(x - 1, y, 4, 1)
+    }
+  }
+  return canvas
+}
+
+function buildFloodCones() {
+  const { canvas, ctx } = offscreen(W, H)
+  for (const x of FLOODLIGHTS) cone(ctx, x + 1, 10, TRACK_BOTTOM, 34)
   return canvas
 }
 
@@ -181,31 +257,64 @@ export interface SideTrackOptions {
   /** Сдвиг камеры по трассе в пикселях */
   scroll: number
   stands: StandsOptions
-  mood?: 'night' | 'overcast'
 }
 
 /** Трасса сбоку с параллаксом: небо стоит, трибуна едет медленно, асфальт — быстро */
-export function drawSideTrack(ctx: CanvasRenderingContext2D, { scroll, stands, mood = 'night' }: SideTrackOptions) {
-  drawSky(ctx, mood)
+export function drawSideTrack(ctx: CanvasRenderingContext2D, { scroll, stands }: SideTrackOptions) {
+  drawSky(ctx)
   drawStrip(ctx, standsCanvas(stands), scroll * 0.35, 34)
-  drawStrip(ctx, cached('barrier', buildBarrier), scroll, TRACK_TOP - 14)
+  drawStrip(ctx, cached('barrier', buildBarrier), scroll, TRACK_TOP - 16)
   drawStrip(ctx, cached('asphalt', buildAsphalt), scroll, TRACK_TOP)
+  ctx.drawImage(cached('reflections', buildReflections), 0, TRACK_TOP)
+  ctx.drawImage(cached('flood-cones', buildFloodCones), 0, 0)
 }
 
-/** Чёрно-белая клетка финишной линии поперёк асфальта */
+/** Тень болида на асфальте: три ступени, без размытия */
+export function carShadow(ctx: CanvasRenderingContext2D, x: number, lane: number) {
+  pixelEllipse(ctx, x + 36, lane, 34, 2, 'rgba(0, 0, 0, 0.35)')
+}
+
+/** Стенка из шин у отбойника в зоне вылета */
+export function drawTyreWall(ctx: CanvasRenderingContext2D, x: number, dented: boolean) {
+  const wall = cached(`tyres-${dented}`, () => {
+    const built = offscreen(46, 24)
+    for (let row = 0; row < 3; row++) {
+      for (let i = 0; i < 4; i++) {
+        const tx = 1 + i * 10 + (row % 2) * 4 - (dented && i > 1 ? 2 : 0)
+        const ty = 16 - row * 7 + (dented && i === 2 && row === 2 ? 2 : 0)
+        fill(built.ctx, '#1a1d22', tx, ty, 9, 6)
+        fill(built.ctx, '#3a4048', tx, ty, 9, 1)
+        fill(built.ctx, row === 1 ? kerb.red : kerb.white, tx + 1, ty + 3, 7, 1)
+      }
+    }
+    return outline(built.canvas)
+  })
+  ctx.drawImage(wall, x, TRACK_TOP - 22)
+}
+
+/** Клетчатая полоса финиша и арка над ней */
 export function drawFinishLine(ctx: CanvasRenderingContext2D, x: number) {
   for (let y = TRACK_TOP; y < TRACK_BOTTOM; y += 4) {
     const odd = ((y - TRACK_TOP) / 4) % 2
-    fill(ctx, odd ? '#e8ece9' : '#0b0f0e', x, y, 4, 4)
-    fill(ctx, odd ? '#0b0f0e' : '#e8ece9', x + 4, y, 4, 4)
+    fill(ctx, odd ? '#c9d0d2' : '#141a1e', x, y, 4, 4)
+    fill(ctx, odd ? '#141a1e' : '#c9d0d2', x + 4, y, 4, 4)
   }
-  // арка
-  fill(ctx, '#1f2a25', x - 2, TRACK_TOP - 40, 2, 40)
-  fill(ctx, '#1f2a25', x + 8, TRACK_TOP - 40, 2, 40)
-  fill(ctx, '#1f2a25', x - 2, TRACK_TOP - 44, 12, 4)
+  const arch = cached('finish-arch', () => {
+    const built = offscreen(26, 56)
+    fill(built.ctx, metal.base, 2, 8, 3, 48)
+    fill(built.ctx, metal.light, 2, 8, 1, 48)
+    fill(built.ctx, metal.base, 20, 8, 3, 48)
+    fill(built.ctx, metal.light, 20, 8, 1, 48)
+    for (let i = 0; i < 12; i++) {
+      fill(built.ctx, i % 2 ? '#c9d0d2' : '#141a1e', 1 + i * 2, 1, 2, 3)
+      fill(built.ctx, i % 2 ? '#141a1e' : '#c9d0d2', 1 + i * 2, 4, 2, 3)
+    }
+    return outline(built.canvas)
+  })
+  ctx.drawImage(arch, x - 9, TRACK_TOP - 50)
 }
 
-/** Овал трассы сверху (сцены 1 и 3) */
+/** Овал трассы сверху (заставка и круги) */
 export const OVAL = { cx: 160, cy: 96, rx: 118, ry: 56 }
 
 export function ovalPoint(angle: number) {
@@ -217,30 +326,74 @@ export function ovalPoint(angle: number) {
 
 function buildTopTrack() {
   const { canvas, ctx } = offscreen(W, H)
-  fill(ctx, '#0d1411', 0, 0, W, H)
+  const image = ctx.createImageData(W, H)
   const rand = rng(3)
-  for (let i = 0; i < 120; i++) fill(ctx, '#132019', rand() * W, rand() * H, 2, 2)
-
-  const plot = (thickness: number, color: string) => {
-    for (let a = 0; a < Math.PI * 2; a += 0.003) {
-      const p = ovalPoint(a)
-      fill(ctx, color, p.x - thickness / 2, p.y - thickness / 2, thickness, thickness)
+  const put = (x: number, y: number, color: string) => {
+    const value = parseInt(color.slice(1), 16)
+    const o = (y * W + x) * 4
+    image.data[o] = value >> 16
+    image.data[o + 1] = (value >> 8) & 255
+    image.data[o + 2] = value & 255
+    image.data[o + 3] = 255
+  }
+  const { cx, cy, rx, ry } = OVAL
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const nx = (x + 0.5 - cx) / rx
+      const ny = (y + 0.5 - cy) / ry
+      const f = nx * nx + ny * ny - 1
+      const gradient = 2 * Math.hypot(nx / rx, ny / ry)
+      const d = f / gradient
+      const angle = Math.atan2(ny, nx)
+      const noise = rand()
+      let color = noise > 0.92 ? grass.light : noise < 0.08 ? grass.dark : grass.base
+      if (Math.abs(d) < 7) color = noise > 0.9 ? asphalt.light : noise < 0.1 ? asphalt.dark : asphalt.base
+      if (Math.abs(d) >= 7 && Math.abs(d) < 9) color = Math.floor(((angle + Math.PI) * 60) / Math.PI) % 2 ? kerb.red : kerb.white
+      if (Math.abs(d) >= 9 && Math.abs(d) < 10) color = OUTLINE
+      if (Math.abs(d) < 0.5 && Math.floor(((angle + Math.PI) * 40) / Math.PI) % 2) color = asphalt.line
+      put(x, y, color)
     }
   }
-  plot(16, '#e8ece9')
-  plot(14, '#2b302f')
-  plot(1, '#4a5550')
+  ctx.putImageData(image, 0, 0)
 
-  // пит-лейн и боксы внизу
-  fill(ctx, '#1f2a25', 110, 158, 100, 8)
-  for (let x = 112; x < 208; x += 10) fill(ctx, '#3a4a43', x, 160, 8, 4)
-  // трибуна сверху
-  fill(ctx, '#1e2925', 100, 18, 120, 12)
-  for (let x = 102; x < 218; x += 3) fill(ctx, '#3a4a43', x, 21, 2, 2)
+  // трибуна сверху: крыша рядами, как на месте аварии
+  fill(ctx, OUTLINE, 89, 9, 142, 22)
+  for (let y = 10; y < 30; y += 2) {
+    fill(ctx, '#181f25', 90, y, 140, 1)
+    fill(ctx, '#232b32', 90, y + 1, 140, 1)
+  }
+  fill(ctx, '#2b333b', 90, 10, 140, 1)
+  fill(ctx, '#c9a227', 150, 30, 20, 1)
+
+  // боксы и пит-лейн внизу
+  fill(ctx, OUTLINE, 99, 161, 122, 14)
+  fill(ctx, metal.base, 100, 162, 120, 12)
+  fill(ctx, metal.light, 100, 162, 120, 1)
+  for (let x = 104; x < 216; x += 12) {
+    fill(ctx, '#151b20', x, 166, 9, 7)
+    fill(ctx, lamp.amber, x + 2, 166, 5, 1)
+  }
+
   // старт-финиш
-  for (let y = 145; y < 160; y += 2) {
-    fill(ctx, '#e8ece9', 160, y, 2, 2)
-    fill(ctx, '#0b0f0e', 162, y, 2, 2)
+  for (let y = 143; y < 158; y += 2) {
+    fill(ctx, '#c9d0d2', 160, y, 2, 2)
+    fill(ctx, '#141a1e', 162, y, 2, 2)
+  }
+
+  // деревья по углам
+  const trees = rng(5)
+  for (const [tx, ty] of [[12, 14], [26, 8], [300, 16], [288, 30], [10, 160], [306, 150], [296, 166]]) {
+    const r = 6 + Math.round(trees() * 3)
+    pixelEllipse(ctx, tx, ty, r + 1, r + 1, OUTLINE)
+    pixelEllipse(ctx, tx, ty, r, r, '#0f1d17')
+    pixelEllipse(ctx, tx - 2, ty - 2, r - 3, r - 3, '#16271f')
+  }
+
+  // прожекторы и их пятна на траве и асфальте
+  for (const [lx, ly] of [[60, 40], [260, 40], [60, 150], [260, 150]]) {
+    glow(ctx, lx, ly, 34, 22)
+    fill(ctx, OUTLINE, lx - 2, ly - 2, 5, 5)
+    fill(ctx, lamp.warm, lx - 1, ly - 1, 3, 3)
   }
   return canvas
 }
@@ -249,93 +402,183 @@ export function drawTopTrack(ctx: CanvasRenderingContext2D) {
   ctx.drawImage(cached('top-track', buildTopTrack), 0, 0)
 }
 
-/** Бокс команды №7 сбоку: стена, стойки с инструментами, табло */
-export function drawPitBox(ctx: CanvasRenderingContext2D, light = 1) {
-  fill(ctx, '#121917', 0, 0, W, H)
-  fill(ctx, '#1b2420', 0, 20, W, 96)
-  // лампы
-  for (let x = 30; x < W; x += 70) {
-    fill(ctx, '#2a3530', x, 14, 30, 4)
-    fill(ctx, light > 0.5 ? '#f6f0c8' : '#6f7a75', x + 2, 18, 26, 2)
+const PIT_LAMPS = [40, 120, 200, 280]
+
+function buildPitBox() {
+  const { canvas, ctx } = offscreen(W, H)
+  fill(ctx, '#0c1114', 0, 0, W, 16)
+  fill(ctx, '#1a2228', 0, 16, W, 100)
+  for (let x = 0; x < W; x += 40) {
+    fill(ctx, '#151c21', x, 16, 1, 100)
+    fill(ctx, '#202a31', x + 1, 16, 1, 100)
   }
-  // табло команды
-  fill(ctx, '#0b0f0e', 128, 30, 64, 24)
-  fill(ctx, '#c62a2f', 130, 32, 60, 20)
-  fill(ctx, '#e8ece9', 152, 35, 16, 3)
-  fill(ctx, '#e8ece9', 164, 38, 4, 3)
-  fill(ctx, '#e8ece9', 162, 41, 4, 3)
-  fill(ctx, '#e8ece9', 160, 44, 4, 3)
-  fill(ctx, '#e8ece9', 158, 47, 4, 3)
-  // стойки с инструментами
-  for (const x of [20, 262]) {
-    fill(ctx, '#2a3530', x, 50, 40, 56)
-    for (let y = 56; y < 104; y += 12) {
-      fill(ctx, '#3d4a44', x + 2, y, 36, 2)
-      fill(ctx, '#a9b3ae', x + 6, y - 5, 2, 5)
-      fill(ctx, '#d93a3a', x + 14, y - 4, 6, 4)
-      fill(ctx, '#e8c43a', x + 26, y - 6, 3, 6)
+  fill(ctx, metal.dark, 0, 14, W, 3)
+  fill(ctx, OUTLINE, 0, 17, W, 1)
+
+  // табло команды №7
+  fill(ctx, OUTLINE, 127, 25, 66, 29)
+  fill(ctx, '#c62a2f', 128, 26, 64, 27)
+  fill(ctx, '#e04848', 128, 26, 64, 1)
+  fill(ctx, '#8f1f24', 128, 52, 64, 1)
+  drawNumber(ctx, '7', 154, 29, '#f2f2f2', 4)
+
+  // перфопанель с инструментами и тумбы
+  for (const x of [14, 266]) {
+    fill(ctx, OUTLINE, x - 1, 39, 42, 28)
+    fill(ctx, metal.base, x, 40, 40, 26)
+    for (let py = 43; py < 64; py += 4) for (let px = x + 2; px < x + 40; px += 4) fill(ctx, metal.dark, px, py, 1, 1)
+    fill(ctx, metal.shine, x + 5, 44, 2, 12)
+    fill(ctx, metal.shine, x + 4, 44, 4, 2)
+    fill(ctx, '#c62a2f', x + 13, 46, 7, 4)
+    fill(ctx, metal.dark, x + 15, 50, 3, 8)
+    fill(ctx, '#e8c43a', x + 26, 44, 3, 10)
+    fill(ctx, metal.shine, x + 33, 45, 2, 14)
+
+    fill(ctx, OUTLINE, x - 1, 79, 42, 38)
+    fill(ctx, '#8f1f24', x, 80, 40, 36)
+    fill(ctx, '#c62a2f', x, 80, 40, 2)
+    for (let dy = 86; dy < 114; dy += 7) {
+      fill(ctx, '#6f2020', x + 2, dy, 36, 1)
+      fill(ctx, metal.shine, x + 16, dy + 3, 8, 1)
     }
+    fill(ctx, metal.light, x - 1, 78, 42, 1)
   }
+
+  // график смены: четыре фамилии и четыре подписи
+  fill(ctx, OUTLINE, 213, 29, 41, 43)
+  fill(ctx, '#d8dcd4', 214, 30, 39, 41)
+  fill(ctx, '#b8bdb5', 252, 31, 1, 40)
+  fill(ctx, '#b8bdb5', 215, 70, 38, 1)
+  fill(ctx, '#c62a2f', 214, 30, 39, 4)
+  fill(ctx, OUTLINE, 232, 27, 3, 3)
+  for (let row = 0; row < 4; row++) {
+    const y = 39 + row * 8
+    fill(ctx, metal.lighter, 217, y, 14, 1)
+    fill(ctx, metal.lighter, 217, y + 2, 10, 1)
+    const sign = [0, -1, 1, 0, -1, 1, 1, -1, 0, 1]
+    sign.forEach((dy, i) => fill(ctx, '#3d5a8f', 235 + i, y + 1 + dy, 1, 1))
+  }
+
   // шины в стопках
-  for (const x of [72, 236]) {
-    for (let i = 0; i < 3; i++) {
-      fill(ctx, '#1a1d22', x, 86 + i * 8, 14, 7)
-      fill(ctx, '#e8c43a', x + 2, 89 + i * 8, 10, 1)
+  for (const x of [64, 240]) {
+    const stack = offscreen(18, 30)
+    for (let i = 0; i < 4; i++) {
+      fill(stack.ctx, '#1a1d22', 1, 1 + i * 7, 16, 6)
+      fill(stack.ctx, '#3a4048', 1, 1 + i * 7, 16, 1)
+      fill(stack.ctx, '#e8c43a', 3, 4 + i * 7, 12, 1)
     }
+    outline(stack.canvas)
+    ctx.drawImage(stack.canvas, x, 87)
   }
-  // пол и разметка пит-лейна
-  fill(ctx, '#3a403f', 0, 116, W, 64)
-  fill(ctx, '#e8c43a', 0, 116, W, 2)
-  for (let x = 0; x < W; x += 24) fill(ctx, '#4a5150', x, 150, 12, 2)
+
+  // пол бокса и разметка пит-лейна
+  fill(ctx, '#20272d', 0, 116, W, 64)
+  fill(ctx, '#c9a227', 0, 116, W, 2)
+  fill(ctx, OUTLINE, 0, 118, W, 1)
+  for (let x = 0; x < W; x += 24) fill(ctx, '#2c343b', x, 162, 12, 2)
+
+  // лампы под потолком и их свет на полу
+  for (const x of PIT_LAMPS) {
+    cone(ctx, x, 18, 150, 26)
+    glow(ctx, x, 150, 34, 8)
+    fill(ctx, OUTLINE, x - 13, 16, 26, 5)
+    fill(ctx, metal.base, x - 12, 16, 24, 3)
+    fill(ctx, lamp.warm, x - 10, 19, 20, 1)
+    fill(ctx, lamp.core, x - 10, 19, 4, 1)
+  }
+  return canvas
 }
 
-/** Пит-уолл: инженер у мониторов, на графике телеметрии скорость лезет вверх */
+export function drawPitBox(ctx: CanvasRenderingContext2D) {
+  ctx.drawImage(cached('pit-box', buildPitBox), 0, 0)
+}
+
+export const MONITORS = [
+  { x: 14, y: 26 },
+  { x: 226, y: 26 },
+]
+const MONITOR_W = 80
+const MONITOR_H = 56
+
+function buildPitWall() {
+  const { canvas, ctx } = offscreen(W, H)
+  night.sky.forEach((color, i) => fill(ctx, color, 0, i * 10, W, 10))
+  fill(ctx, night.sky[4], 0, 50, W, 70)
+  // дальние трибуны и огни трассы за стеклом
+  fill(ctx, '#0b1114', 0, 58, W, 18)
+  const rand = rng(21)
+  for (let i = 0; i < 40; i++) fill(ctx, rand() > 0.7 ? lamp.amber : '#2b333b', rand() * W, 60 + rand() * 14, 1, 1)
+  for (const x of [60, 160, 260]) glow(ctx, x, 46, 14, 8)
+  fill(ctx, metal.dark, 0, 76, W, 4)
+
+  for (const { x, y } of MONITORS) {
+    fill(ctx, OUTLINE, x + MONITOR_W / 2 - 4, y + MONITOR_H, 8, 24)
+    fill(ctx, metal.base, x + MONITOR_W / 2 - 3, y + MONITOR_H, 6, 23)
+    fill(ctx, OUTLINE, x - 3, y - 3, MONITOR_W + 6, MONITOR_H + 6)
+    fill(ctx, metal.base, x - 2, y - 2, MONITOR_W + 4, MONITOR_H + 4)
+    fill(ctx, metal.light, x - 2, y - 2, MONITOR_W + 4, 1)
+    fill(ctx, '#06100b', x, y, MONITOR_W, MONITOR_H)
+    for (let gx = 0; gx < MONITOR_W; gx += 10) fill(ctx, '#0c1c14', x + gx, y, 1, MONITOR_H)
+    for (let gy = 0; gy < MONITOR_H; gy += 10) fill(ctx, '#0c1c14', x, y + gy, MONITOR_W, 1)
+  }
+
+  // стол-пульт
+  fill(ctx, OUTLINE, 0, 103, W, 1)
+  fill(ctx, metal.light, 0, 104, W, 3)
+  fill(ctx, metal.shine, 0, 104, W, 1)
+  fill(ctx, metal.base, 0, 107, W, 73)
+  fill(ctx, OUTLINE, 0, 107, W, 1)
+  for (let x = 24; x < W; x += 30) {
+    fill(ctx, metal.dark, x, 116, 18, 8)
+    fill(ctx, '#3dbf72', x + 2, 118, 2, 2)
+    fill(ctx, '#e8c43a', x + 6, 118, 2, 2)
+  }
+  return canvas
+}
+
+/**
+ * Пит-уолл: слева график скорости, справа температура мотора.
+ * telemetry — 0..1, на 0.75 и выше линии краснеют.
+ */
 export function drawPitWall(ctx: CanvasRenderingContext2D, telemetry: number, time: number) {
-  fill(ctx, '#0a0f0d', 0, 0, W, H)
-  fill(ctx, '#151d1a', 0, 120, W, 60)
-  fill(ctx, '#1f2a25', 0, 118, W, 4)
-  const screens = [
-    { x: 40, y: 30 },
-    { x: 124, y: 30 },
-    { x: 208, y: 30 },
-  ]
-  screens.forEach(({ x, y }, i) => {
-    fill(ctx, '#2a3530', x - 2, y - 2, 76, 52)
-    fill(ctx, '#06100b', x, y, 72, 48)
-    fill(ctx, '#1f2a25', x + 34, y + 50, 4, 10)
-    for (let gx = 0; gx < 72; gx++) {
-      const base = i === 1 ? telemetry : 0.4
-      const value = base * (gx / 72) + Math.sin((gx + time * 30 + i * 20) / 6) * 0.05
-      const gy = y + 44 - Math.round(Math.min(1, Math.max(0, value)) * 40)
-      fill(ctx, i === 1 && telemetry > 0.75 ? '#e04848' : '#3dbf72', x + gx, gy, 1, 1)
+  ctx.drawImage(cached('pit-wall', buildPitWall), 0, 0)
+  MONITORS.forEach(({ x, y }, i) => {
+    const hot = telemetry > 0.75
+    const color = hot ? '#e04848' : i === 0 ? '#3dbf72' : '#e0a92e'
+    fill(ctx, color, x + 2, y + 2, 14, 2)
+    for (let gx = 0; gx < MONITOR_W; gx += 2) {
+      const base = telemetry * (gx / MONITOR_W) + (i === 1 ? 0.15 : 0)
+      const value = base + Math.sin((gx + time * 30 + i * 20) / 6) * 0.04
+      const gy = y + MONITOR_H - 4 - Math.round(Math.min(1, Math.max(0, value)) * (MONITOR_H - 12))
+      fill(ctx, color, x + gx, gy, 2, 1)
     }
+    if (hot && Math.floor(time * 3) % 2) fill(ctx, '#e04848', x + MONITOR_W - 10, y + 3, 6, 6)
   })
-  // стол
-  fill(ctx, '#2a3530', 20, 98, 280, 8)
-  fill(ctx, '#1b2420', 30, 106, 4, 14)
-  fill(ctx, '#1b2420', 286, 106, 4, 14)
 }
 
-/** Косые струи дождя поверх кадра */
-export function drawRain(ctx: CanvasRenderingContext2D, time: number, density = 70) {
-  const rand = rng(99)
-  for (let i = 0; i < density; i++) {
-    const speed = 160 + rand() * 80
-    const x = wrap(rand() * W - time * speed * 0.3, W)
-    const y = wrap(rand() * H + time * speed, H)
-    fill(ctx, 'rgba(169,179,174,0.45)', x, y, 1, 4)
-  }
-}
-
-/** Стартовые огни: lit — сколько из пяти горит */
+/** Стартовые огни на балке: lit — сколько из пяти горит */
 export function drawStartLights(ctx: CanvasRenderingContext2D, x: number, y: number, lit: number) {
-  fill(ctx, '#0b0f0e', x, y, 62, 16)
-  fill(ctx, '#1f2a25', x + 30, y - 20, 2, 20)
-  for (let i = 0; i < 5; i++) {
-    fill(ctx, '#2a1415', x + 3 + i * 12, y + 3, 9, 10)
-    if (i < lit) {
-      fill(ctx, '#e04848', x + 3 + i * 12, y + 3, 9, 10)
-      fill(ctx, '#ff9b8f', x + 5 + i * 12, y + 5, 3, 3)
+  const gantry = cached('start-gantry', () => {
+    const built = offscreen(64, 40)
+    fill(built.ctx, metal.base, 30, 0, 3, 22)
+    fill(built.ctx, metal.light, 30, 0, 1, 22)
+    fill(built.ctx, metal.dark, 0, 20, 64, 16)
+    fill(built.ctx, metal.base, 0, 20, 64, 1)
+    for (let i = 0; i < 5; i++) {
+      fill(built.ctx, OUTLINE, 3 + i * 12, 23, 10, 11)
+      fill(built.ctx, '#2a1415', 4 + i * 12, 24, 8, 4)
+      fill(built.ctx, '#2a1415', 4 + i * 12, 29, 8, 4)
     }
+    return outline(built.canvas)
+  })
+  ctx.drawImage(gantry, x, y - 20)
+  for (let i = 0; i < lit; i++) {
+    const lx = x + 4 + i * 12
+    pixelEllipse(ctx, lx + 4, y + 8, 9, 8, 'rgba(224, 72, 72, 0.12)')
+    pixelEllipse(ctx, lx + 4, y + 8, 6, 5, 'rgba(224, 72, 72, 0.16)')
+    fill(ctx, '#e04848', lx, y + 4, 8, 4)
+    fill(ctx, '#e04848', lx, y + 9, 8, 4)
+    fill(ctx, '#ff9b8f', lx + 1, y + 4, 3, 1)
+    fill(ctx, '#ff9b8f', lx + 1, y + 9, 3, 1)
   }
 }
