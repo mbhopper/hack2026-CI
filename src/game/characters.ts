@@ -3,6 +3,8 @@ import mechanicSheet from '../assets/characters/mechanic.png'
 import pilot1Sheet from '../assets/characters/pilot1.png'
 import pilot22Sheet from '../assets/characters/pilot22.png'
 import sponsorSheet from '../assets/characters/sponsor.png'
+import mechanicFifthSheet from '../assets/cutscene/mechanic-fifth.png'
+import { pixelEllipse } from './lighting.ts'
 
 /**
  * Листы ходьбы персонажей: 96×128, ячейка 32×32.
@@ -15,6 +17,7 @@ export const characterSheets = {
   pilot1: pilot1Sheet,
   pilot22: pilot22Sheet,
   mechanic: mechanicSheet,
+  mechanicFifth: mechanicFifthSheet,
   sponsor: sponsorSheet,
 } as const
 
@@ -43,9 +46,6 @@ export function drawCharacter(
 ) {
   const left = Math.round(x - FRAME_SIZE / 2)
   const top = Math.round(y - FEET_Y)
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.35)'
-  ctx.beginPath()
-  ctx.ellipse(Math.round(x), Math.round(y) + 1, 9, 3, 0, 0, Math.PI * 2)
-  ctx.fill()
+  pixelEllipse(ctx, Math.round(x), Math.round(y) + 1, 8, 2, 'rgba(0, 0, 0, 0.35)')
   ctx.drawImage(sheet, frame * FRAME_SIZE, ROW[dir] * FRAME_SIZE, FRAME_SIZE, FRAME_SIZE, left, top, FRAME_SIZE, FRAME_SIZE)
 }
