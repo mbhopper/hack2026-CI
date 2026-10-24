@@ -1,0 +1,233 @@
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { Button } from '../components/Button.tsx'
+import { GameAudio } from '../game/audio.ts'
+import { H, W } from '../game/scenery.ts'
+import { script } from './script.ts'
+import type { Overlay, SharedLoops } from './types.ts'
+import './Cutscene.css'
+
+interface CutsceneProps {
+  playerName: string
+  /** skipped = true, если игрок нажал «Пропустить» */
+  onFinish(skipped: boolean): void
+}
+
+type Phase = 'ready' | 'playing' | 'paused'
+
+/** Целый масштаб, чтобы пиксели оставались квадратными */
+function useIntegerScale() {
+  const [scale, setScale] = useState(1)
+  useEffect(() => {
+    const update = () => setScale(Math.max(1, Math.floor(Math.min(window.innerWidth / W, window.innerHeight / H))))
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
+  return scale
+}
+
+function locate(time: number) {
+  let start = 0
+  for (let index = 0; index < script.length; index++) {
+    const scene = script[index]
+    if (time < start + scene.duration) return { index, t: time - start }
+    start += scene.duration
+  }
+  return null
+}
+
+export function Cutscene({ playerName, onFinish }: CutsceneProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [phase, setPhase] = useState<Phase>('ready')
+  const [overlay, setOverlay] = useState<Overlay>({})
+  const scale = useIntegerScale()
+
+  const audioRef = useRef<GameAudio | null>(null)
+  const loopsRef = useRef<SharedLoops>({})
+  const rafRef = useRef(0)
+  const clock = useRef({ time: 0, last: 0, paused: false, scene: -1, fired: new Set<number>(), overlayKey: '' })
+  const finishedRef = useRef(false)
+  const reducedMotion = useRef(window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+
+  const finish = useCallback(
+    (skipped: boolean) => {
+      if (finishedRef.current) return
+      finishedRef.current = true
+      cancelAnimationFrame(rafRef.current)
+      audioRef.current?.close()
+      audioRef.current = null
+      onFinish(skipped)
+    },
+    [onFinish],
+  )
+
+  const tick = useCallback(
+    function frame(now: number) {
+      const state = clock.current
+      const dt = Math.min(0.1, (now - state.last) / 1000)
+      state.last = now
+      if (!state.paused) state.time += dt
+
+      const where = locate(state.time)
+      if (!where) {
+        finish(false)
+        return
+      }
+      const scene = script[where.index]
+      if (where.index !== state.scene) {
+        state.scene = where.index
+        state.fired = new Set()
+      }
+
+      const audio = audioRef.current
+      scene.cues?.forEach((cue, i) => {
+        if (cue.at <= where.t && !state.fired.has(i)) {
+          state.fired.add(i)
+          if (audio) cue.run(audio, loopsRef.current)
+        }
+      })
+
+      const ctx = canvasRef.current?.getContext('2d')
+      if (ctx) {
+        ctx.imageSmoothingEnabled = false
+        ctx.setTransform(1, 0, 0, 1, 0, 0)
+        ctx.fillStyle = '#000'
+        ctx.fillRect(0, 0, W, H)
+        const amplitude = reducedMotion.current ? 0 : (scene.shake?.(where.t) ?? 0)
+        if (amplitude) {
+          ctx.translate(
+            Math.round((Math.random() * 2 - 1) * amplitude),
+            Math.round((Math.random() * 2 - 1) * amplitude),
+          )
+        }
+        scene.draw({ ctx, t: where.t, frame: Math.floor(state.time * 30), reducedMotion: reducedMotion.current })
+        ctx.setTransform(1, 0, 0, 1, 0, 0)
+        const flash = reducedMotion.current ? 0 : (scene.flash?.(where.t) ?? 0)
+        if (flash) {
+          ctx.globalAlpha = flash
+          ctx.fillStyle = '#fff'
+          ctx.fillRect(0, 0, W, H)
+          ctx.globalAlpha = 1
+        }
+      }
+
+      const next = scene.overlay?.(where.t, playerName) ?? {}
+      const key = JSON.stringify(next)
+      if (key !== state.overlayKey) {
+        state.overlayKey = key
+        setOverlay(next)
+      }
+
+      rafRef.current = requestAnimationFrame(frame)
+    },
+    [finish, playerName],
+  )
+
+  const start = () => {
+    audioRef.current = GameAudio.create()
+    clock.current.last = performance.now()
+    setPhase('playing')
+    rafRef.current = requestAnimationFrame(tick)
+  }
+
+  const togglePause = useCallback(() => {
+    const state = clock.current
+    state.paused = !state.paused
+    if (state.paused) audioRef.current?.pause()
+    else audioRef.current?.resume()
+    setPhase(state.paused ? 'paused' : 'playing')
+  }, [])
+
+  useEffect(() => {
+    if (phase === 'ready') return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') finish(true)
+      if (event.key === ' ') {
+        event.preventDefault()
+        togglePause()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [phase, finish, togglePause])
+
+  // Вкладка ушла в фон: кадры больше не приходят, а звук бы продолжил играть.
+  // Ставим на паузу, чтобы картинка и звук не разъехались.
+  useEffect(() => {
+    if (phase !== 'playing') return
+    const onVisibility = () => {
+      if (document.hidden && !clock.current.paused) togglePause()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [phase, togglePause])
+
+  useEffect(
+    () => () => {
+      cancelAnimationFrame(rafRef.current)
+      audioRef.current?.close()
+      audioRef.current = null
+    },
+    [],
+  )
+
+  const stageStyle = { '--px': `${scale}px`, width: W * scale, height: H * scale } as CSSProperties
+
+  return (
+    <div className="cutscene">
+      <div className="cutscene__stage" style={stageStyle}>
+        <canvas ref={canvasRef} width={W} height={H} className="cutscene__canvas" aria-hidden="true" />
+
+        {phase === 'ready' ? (
+          <div className="cutscene__ready">
+            <p className="cutscene__ready-kicker">Последний круг</p>
+            <Button onClick={start} autoFocus>
+              Нажмите, чтобы начать
+            </Button>
+            <p className="cutscene__ready-hint">Включите звук · Esc — пропустить · Пробел — пауза</p>
+          </div>
+        ) : (
+          <div className="cutscene__overlay" aria-live="polite">
+            {overlay.caption && (
+              <p className={`cutscene__caption cutscene__caption--${overlay.caption.size}`}>{overlay.caption.text}</p>
+            )}
+            {overlay.lap && <p className="cutscene__lap">{overlay.lap}</p>}
+            {overlay.hud && (
+              <div className="cutscene__hud">
+                <span className="cutscene__speed">
+                  {overlay.hud.speed}
+                  <small> км/ч</small>
+                </span>
+                <span className="cutscene__heat" aria-label={`Температура мотора ${Math.round(overlay.hud.heat * 100)}%`}>
+                  <span style={{ width: `${overlay.hud.heat * 100}%` }} data-hot={overlay.hud.heat > 0.8} />
+                </span>
+              </div>
+            )}
+            {overlay.photo && <p className="cutscene__photo">{overlay.photo}</p>}
+            <div className="cutscene__bottom">
+              {overlay.sound && <p className="cutscene__sound">{overlay.sound}</p>}
+              {overlay.subtitle && (
+                <p className="cutscene__subtitle">
+                  {overlay.subtitle.speaker && <b>{overlay.subtitle.speaker}: </b>}
+                  {overlay.subtitle.text}
+                </p>
+              )}
+            </div>
+            {phase === 'paused' && <p className="cutscene__paused">Пауза</p>}
+          </div>
+        )}
+      </div>
+
+      {phase !== 'ready' && (
+        <div className="cutscene__controls">
+          <button type="button" className="cutscene__control" onClick={togglePause}>
+            {phase === 'paused' ? 'Продолжить' : 'Пауза'}
+          </button>
+          <button type="button" className="cutscene__control" onClick={() => finish(true)}>
+            Пропустить →
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
