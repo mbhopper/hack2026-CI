@@ -57,6 +57,9 @@
 }
 
 .suspects__sprite {
+  max-width: 100%;
+  height: auto;
+  image-rendering: pixelated;
   animation: suspects-in 0.25s steps(3) both;
 }
 
