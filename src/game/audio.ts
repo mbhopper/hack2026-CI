@@ -1,6 +1,6 @@
 /**
- * Все звуки и музыка синтезируются Web Audio прямо в браузере: файлов нет,
- * лицензий тоже. AudioContext можно запустить только после жеста игрока,
+ * Все звуки и музыка синтезируются Web Audio, аудиофайлов нет.
+ * AudioContext запускается только после жеста пользователя,
  * поэтому `GameAudio.create()` вызываем из обработчика клика.
  */
 
@@ -303,7 +303,7 @@ export class GameAudio {
       return osc
     })
 
-    // A минор с полутоном сверху — тревожно, но тихо
+    // ля минор с полутоном сверху
     const notes = [220, 261.6, 329.6, 311.1, 220, 261.6, 349.2, 329.6]
     let step = 0
     let next = this.now + 0.2
@@ -355,7 +355,7 @@ export class GameAudio {
     this.loops.add(loop)
   }
 
-  /** Обрыв музыки — в момент удара всё стихает */
+  /** Обрыв музыки */
   musicStop(fade = 0.02) {
     if (this.musicTimer !== null) window.clearInterval(this.musicTimer)
     this.musicTimer = null

@@ -7,7 +7,7 @@ import { suspects } from '../game/story.ts'
 import { routes } from '../routes.ts'
 import './SuspectsPage.css'
 
-/** Заглушка допроса: диалоги — следующий этап */
+/** Заглушка допроса */
 export function InterrogationPage() {
   const { id } = useParams()
   const suspect = suspects.find((item) => item.id === id)

@@ -17,7 +17,7 @@ function writeToken(token: string | null) {
     if (token) localStorage.setItem(TOKEN_KEY, token)
     else localStorage.removeItem(TOKEN_KEY)
   } catch {
-    // не страшно: сессия просто не переживёт перезагрузку
+    // без хранилища сессия не переживёт перезагрузку
   }
 }
 
