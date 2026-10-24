@@ -1,0 +1,64 @@
+.difficulty {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.difficulty legend {
+  margin-bottom: 10px;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.difficulty__options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0;
+}
+
+.difficulty__options label {
+  position: relative;
+  padding: 10px 16px;
+  border: 1px solid var(--color-surface-border);
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+  cursor: pointer;
+}
+
+.difficulty__options label + label {
+  margin-left: -1px;
+}
+
+.difficulty__options label[data-checked='true'] {
+  z-index: 1;
+  border-color: var(--color-accent);
+  background: linear-gradient(rgba(61, 191, 114, 0.12), rgba(61, 191, 114, 0.12)), var(--color-bg);
+  color: var(--color-text);
+}
+
+.difficulty__options label:has(input:focus-visible) {
+  outline: 2px solid var(--color-accent-soft);
+  outline-offset: 2px;
+}
+
+.difficulty__options input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.difficulty__text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-text-dim);
+}

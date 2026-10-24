@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { HomePage } from './pages/HomePage.tsx'
 import { LoginPage } from './pages/LoginPage.tsx'
 import { RegisterPage } from './pages/RegisterPage.tsx'
+import { GuestPage } from './pages/GuestPage.tsx'
 import { PlayPage } from './pages/PlayPage.tsx'
 import { IntroPage } from './pages/IntroPage.tsx'
 import { LocationRoute } from './pages/LocationPage.tsx'
@@ -23,6 +24,7 @@ export default function App() {
         <Route path={routes.home} element={<HomePage />} />
         <Route path={routes.login} element={<LoginPage />} />
         <Route path={routes.register} element={<RegisterPage />} />
+        <Route path={routes.guest} element={<GuestPage />} />
         <Route
           path={routes.play}
           element={

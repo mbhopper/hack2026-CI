@@ -1,4 +1,6 @@
+import { Link } from 'react-router-dom'
 import { Button, ButtonLink } from '../components/Button.tsx'
+import { DifficultyPicker } from '../components/DifficultyPicker.tsx'
 import { PageShell } from '../components/PageShell.tsx'
 import { useAuth } from '../auth/useAuth.ts'
 import { routes } from '../routes.ts'
@@ -30,9 +32,18 @@ export function HomePage() {
               <p className="home__lead">С возвращением, детектив {user.nickname}</p>
               <div className="home__actions">
                 <ButtonLink to={routes.play}>Продолжить</ButtonLink>
-                <Button variant="ghost" onClick={() => void logout()}>
-                  Выйти
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    if (user.guest && !window.confirm('У гостя нет аккаунта: прогресс удалится. Завершить игру?')) return
+                    void logout()
+                  }}
+                >
+                  {user.guest ? 'Завершить игру' : 'Выйти'}
                 </Button>
+              </div>
+              <div className="home__settings">
+                <DifficultyPicker />
               </div>
             </>
           ) : (
@@ -44,6 +55,9 @@ export function HomePage() {
                   Регистрация
                 </ButtonLink>
               </div>
+              <p className="home__guest">
+                <Link to={routes.guest}>Играть без регистрации</Link>
+              </p>
             </>
           ))}
       </div>

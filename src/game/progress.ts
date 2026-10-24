@@ -1,5 +1,6 @@
 import { routes } from '../routes.ts'
 import { verdict } from './accusation.ts'
+import { HARD_ATTEMPTS } from './difficulty.ts'
 import type { GameState } from './state.ts'
 import { cluesAt, locations, type LocationId } from './story.ts'
 
@@ -30,5 +31,6 @@ export function resumeRoute(state: GameState) {
   const place = nextLocation(state)
   if (place) return routes.inspect(place.id)
   if (state.accusation && verdict(state.accusation) === 'solved') return routes.ending
+  if (state.difficulty === 'hard' && state.attempts >= HARD_ATTEMPTS) return routes.ending
   return routes.suspects
 }

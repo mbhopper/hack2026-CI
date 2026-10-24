@@ -7,7 +7,7 @@ import './GameHeader.css'
 
 /** Правый угол шапки в игре: где мы сейчас, блокнот и кнопка выхода */
 export function GameHeader({ label }: { label: string }) {
-  const { logout } = useAuth()
+  const { user, logout } = useAuth()
   const navigate = useNavigate()
   return (
     <span className="game-header">
@@ -17,6 +17,7 @@ export function GameHeader({ label }: { label: string }) {
         type="button"
         className="game-header__logout"
         onClick={() => {
+          if (user?.guest && !window.confirm('У гостя нет аккаунта: прогресс удалится. Завершить игру?')) return
           // переход и выход в одном обновлении: иначе защита страницы
           // успеет увидеть пустую сессию и отправит на вход, а не на главную
           startTransition(() => {
@@ -25,7 +26,7 @@ export function GameHeader({ label }: { label: string }) {
           })
         }}
       >
-        Выйти
+        {user?.guest ? 'Завершить' : 'Выйти'}
       </button>
     </span>
   )

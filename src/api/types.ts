@@ -7,6 +7,8 @@ export interface User {
   id: string
   nickname: string
   createdAt: string
+  /** Гость без регистрации: живёт только в этом браузере, сервер о нём не знает */
+  guest?: boolean
 }
 
 export interface Credentials {

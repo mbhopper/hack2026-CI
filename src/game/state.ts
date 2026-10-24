@@ -70,6 +70,15 @@ export function saveState(userId: string, state: GameState) {
   }
 }
 
+/** Стереть прогресс: гость ушёл, и вернуться к нему уже нельзя */
+export function forgetState(userId: string) {
+  try {
+    localStorage.removeItem(key(userId))
+  } catch {
+    // нечего стирать
+  }
+}
+
 const add = (list: string[], id: string) => (list.includes(id) ? list : [...list, id])
 
 export type GameAction =

@@ -7,6 +7,8 @@ export interface AuthContextValue {
   loading: boolean
   login(credentials: Credentials): Promise<void>
   register(credentials: Credentials): Promise<void>
+  /** Играть без регистрации под любым именем */
+  playAsGuest(nickname: string): void
   logout(): Promise<void>
 }
 

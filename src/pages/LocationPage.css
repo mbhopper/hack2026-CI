@@ -196,6 +196,15 @@ a.site__place:hover {
   color: var(--color-text-dim);
 }
 
+.site__stage--easy .site__spot:not(.site__spot--seen) {
+  border-color: rgba(224, 169, 46, 0.6);
+}
+
+/* сложно: пока улика не найдена, метки нет, только рамка под курсором */
+.site__stage--hard .site__spot:not(.site__spot--seen) .site__marker {
+  visibility: hidden;
+}
+
 @keyframes track-pulse {
   50% {
     transform: scale(0.85);

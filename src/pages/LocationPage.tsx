@@ -89,10 +89,13 @@ function LocationPage({ place }: { place: Location }) {
 
         <div className="site__intro">
           <h1 className="site__title">{place.title}</h1>
-          <p className="site__lead">{place.lead}</p>
+          <p className="site__lead">
+            {place.lead}
+            {state.difficulty === 'hard' && ' Меток нет: ищите сами, нажимая на подозрительные места.'}
+          </p>
         </div>
 
-        <div className="site__stage" style={{ aspectRatio: `${W} / ${H}` }}>
+        <div className={`site__stage site__stage--${state.difficulty}`} style={{ aspectRatio: `${W} / ${H}` }}>
           <canvas ref={canvasRef} width={W} height={H} className="site__canvas" aria-hidden="true" />
           {clues.map((clue) => {
             const spot = clue.spot!

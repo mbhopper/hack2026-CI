@@ -4,6 +4,7 @@ import { GameHeader } from '../components/GameHeader.tsx'
 import { PageShell } from '../components/PageShell.tsx'
 import { RevealScene } from '../components/RevealScene.tsx'
 import { methods, motives, solution, verdict } from '../game/accusation.ts'
+import { HARD_ATTEMPTS } from '../game/difficulty.ts'
 import { suspects } from '../game/story.ts'
 import { useGame } from '../game/useGame.ts'
 import { routes } from '../routes.ts'
@@ -64,10 +65,17 @@ export function EndingPage() {
     )
   }
 
+  const outOfAttempts = state.difficulty === 'hard' && state.attempts >= HARD_ATTEMPTS
   const accused = suspects.find((item) => item.id === state.accusation?.suspect)
   const wrongParts = [
-    state.accusation.method !== solution.method && `способ («${methods.find((m) => m.id === state.accusation?.method)?.text}»)`,
-    state.accusation.motive !== solution.motive && `мотив («${motives.find((m) => m.id === state.accusation?.motive)?.text}»)`,
+    state.accusation.method !== solution.method &&
+      (state.difficulty === 'easy'
+        ? `способ («${methods.find((m) => m.id === state.accusation?.method)?.text}»)`
+        : 'способ'),
+    state.accusation.motive !== solution.motive &&
+      (state.difficulty === 'easy'
+        ? `мотив («${motives.find((m) => m.id === state.accusation?.motive)?.text}»)`
+        : 'мотив'),
   ].filter(Boolean)
 
   return (
@@ -84,15 +92,21 @@ export function EndingPage() {
           ) : (
             <>
               <p>
-                Вы правы насчёт спонсора, но адвокат разбил версию в суде: не сходится {wrongParts.join(' и ')}.
+                Вы правы насчёт спонсора, но адвокат разбил версию в суде
+                {state.difficulty === 'hard' ? '.' : `: не сходится ${wrongParts.join(' и ')}.`}
               </p>
               <p>Дело вернули на доследование, спонсора отпустили под подписку о невыезде.</p>
             </>
           )}
         </div>
+        {outOfAttempts && (
+          <p className="ending__meta">
+            Три ошибки подряд: дело передали другому следователю. Начните расследование заново.
+          </p>
+        )}
         <div className="ending__actions">
-          <ButtonLink to={routes.suspects}>Вернуться к делу</ButtonLink>
-          <Button variant="ghost" onClick={restart}>
+          {!outOfAttempts && <ButtonLink to={routes.suspects}>Вернуться к делу</ButtonLink>}
+          <Button variant={outOfAttempts ? 'primary' : 'ghost'} onClick={restart}>
             Начать заново
           </Button>
         </div>

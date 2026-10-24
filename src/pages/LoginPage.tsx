@@ -57,7 +57,8 @@ export function LoginPage() {
         subtitle="Детектив, трасса ждёт. Предъявите удостоверение."
         footer={
           <>
-            Ещё нет аккаунта? <Link to={routes.register} state={location.state}>Зарегистрироваться</Link>
+            Ещё нет аккаунта? <Link to={routes.register} state={location.state}>Зарегистрироваться</Link> или{' '}
+            <Link to={routes.guest} state={location.state}>играть без регистрации</Link>
           </>
         }
       >

@@ -126,7 +126,11 @@
 }
 
 .talk__locked {
+  display: grid;
+  gap: 4px;
   margin: 0;
+  padding: 0;
+  list-style: none;
   font-size: 14px;
   color: var(--color-text-dim);
 }

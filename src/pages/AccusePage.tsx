@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { Button, ButtonLink } from '../components/Button.tsx'
 import { GameHeader } from '../components/GameHeader.tsx'
 import { PageShell } from '../components/PageShell.tsx'
 import { methods, motives, type Option } from '../game/accusation.ts'
 import { suspects } from '../game/story.ts'
 import { questionKey, questions } from '../game/dialogue.ts'
+import { HARD_ATTEMPTS } from '../game/difficulty.ts'
+import { verdict } from '../game/accusation.ts'
 import { useGame } from '../game/useGame.ts'
 import { routes } from '../routes.ts'
 import './AccusePage.css'
@@ -61,6 +63,13 @@ export function AccusePage() {
     navigate(routes.ending)
   }
 
+  // на сложном уровне после трёх ошибок дело забирают — только начать заново
+  const outOfAttempts =
+    state.difficulty === 'hard' &&
+    state.attempts >= HARD_ATTEMPTS &&
+    !(state.accusation && verdict(state.accusation) === 'solved')
+  if (outOfAttempts) return <Navigate to={routes.ending} replace />
+
   if (silent.length > 0) {
     return (
       <PageShell fadedTrack headerSlot={<GameHeader label="Обвинение" />}>
@@ -105,7 +114,13 @@ export function AccusePage() {
             Ещё подумать
           </ButtonLink>
         </div>
-        {state.attempts > 0 && <p className="accuse__attempts">Попыток уже было: {state.attempts}</p>}
+        {state.difficulty === 'hard' ? (
+          <p className="accuse__attempts">
+            Осталось попыток: {HARD_ATTEMPTS - state.attempts} из {HARD_ATTEMPTS}
+          </p>
+        ) : (
+          state.attempts > 0 && <p className="accuse__attempts">Попыток уже было: {state.attempts}</p>
+        )}
       </form>
     </PageShell>
   )

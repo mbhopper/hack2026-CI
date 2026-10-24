@@ -6,7 +6,7 @@ import { PageShell } from '../components/PageShell.tsx'
 import { PixelSprite } from '../components/PixelSprite.tsx'
 import { canAsk, questionKey, questions, type Question } from '../game/dialogue.ts'
 import { personSprite } from '../game/sprites.ts'
-import { factById, suspects, type Suspect } from '../game/story.ts'
+import { clueById, factById, suspects, type Suspect } from '../game/story.ts'
 import { useGame } from '../game/useGame.ts'
 import { routes } from '../routes.ts'
 import './SuspectsPage.css'
@@ -27,7 +27,16 @@ function Interrogation({ suspect }: { suspect: Suspect }) {
 
   const list = questions[suspect.id] ?? []
   const open = list.filter((question) => canAsk(state, question))
-  const locked = list.length - open.length
+  const locked = list.filter((question) => !canAsk(state, question))
+  const missing = (question: Question) =>
+    (question.needs ?? [])
+      .filter((need) => !state.found.includes(need) && !state.facts.includes(need))
+      .map((need) => {
+        const clue = clueById(need)
+        if (clue) return `улика «${clue.title}»`
+        const fact = factById(need)
+        return `показание: ${suspects.find((item) => item.id === fact?.suspect)?.name ?? '?'}`
+      })
 
   const ask = (question: Question) => {
     const key = questionKey(suspect.id, question.id)
@@ -93,11 +102,18 @@ function Interrogation({ suspect }: { suspect: Suspect }) {
               )
             })}
           </ul>
-          {locked > 0 && (
+          {locked.length > 0 && state.difficulty === 'normal' && (
             <p className="talk__locked">
-              Ещё {locked} {locked === 1 ? 'вопрос откроется' : 'вопроса откроются'}, когда найдёте новые улики или
-              показания.
+              Ещё {locked.length} {locked.length === 1 ? 'вопрос откроется' : 'вопроса откроются'}, когда найдёте новые
+              улики или показания.
             </p>
+          )}
+          {locked.length > 0 && state.difficulty === 'easy' && (
+            <ul className="talk__locked">
+              {locked.map((question) => (
+                <li key={question.id}>Закрытый вопрос откроется: {missing(question).join(', ')}</li>
+              ))}
+            </ul>
           )}
         </section>
 

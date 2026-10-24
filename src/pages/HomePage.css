@@ -45,6 +45,22 @@
   min-width: 200px;
 }
 
+.home__guest {
+  margin: 22px 0 0;
+}
+
+.home__guest a {
+  color: var(--color-text-muted);
+}
+
+.home__guest a:hover {
+  color: var(--color-accent-soft);
+}
+
+.home__settings {
+  margin-top: 30px;
+}
+
 @media (max-width: 860px) {
   .home__title {
     font-size: 44px;
