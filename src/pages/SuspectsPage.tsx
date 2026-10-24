@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '../components/Button.tsx'
 import { GameHeader } from '../components/GameHeader.tsx'
 import { PageShell } from '../components/PageShell.tsx'
@@ -13,9 +13,7 @@ import { routes } from '../routes.ts'
 import './SuspectsPage.css'
 
 export function SuspectsPage() {
-  // после ошибочного обвинения доигрывает грустная тема
-  const afterWrong = (useLocation().state as { afterWrong?: boolean } | null)?.afterWrong
-  useMusic(afterWrong ? 'sad' : 'interrogation')
+  useMusic('interrogation')
   const navigate = useNavigate()
   const [index, setIndex] = useState(0)
   const suspect = suspects[index]
