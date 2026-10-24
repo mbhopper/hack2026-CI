@@ -106,10 +106,28 @@
   background: var(--color-accent);
 }
 
+.suspects__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
 .suspects__hint {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 12px;
   margin: 0;
   font-size: 13px;
   color: var(--color-text-dim);
+}
+
+/* подсказки про клавиатуру на тач-экранах не нужны */
+@media (hover: none) {
+  .suspects__keys {
+    display: none;
+  }
 }
 
 @keyframes suspects-in {

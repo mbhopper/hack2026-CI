@@ -14,8 +14,8 @@ export function TrackBackdrop({ faded = false, withCar = false }: TrackBackdropP
   return (
     <svg
       className={`track${faded ? ' track--faded' : ''}`}
-      viewBox="0 0 1440 900"
-      preserveAspectRatio="xMidYMid slice"
+      viewBox="170 160 1200 690"
+      preserveAspectRatio="xMidYMid meet"
       aria-hidden="true"
       focusable="false"
       shapeRendering="crispEdges"
@@ -62,10 +62,10 @@ export function TrackBackdrop({ faded = false, withCar = false }: TrackBackdropP
 
       {withCar && (
         <>
-          {/* стартовая прямая */}
+          {/* стартовая линия поперёк нижней прямой */}
           <g className="track__start">
-            {Array.from({ length: 5 }, (_, row) => (
-              <rect key={row} x="680" y={654 + row * 12} width="8" height="8" />
+            {Array.from({ length: 6 }, (_, row) => (
+              <rect key={row} x={680 + (row % 2) * 8} y={734 + row * 8} width="8" height="8" />
             ))}
           </g>
           {/* клетчатый флаг на дальней дуге */}
@@ -78,8 +78,8 @@ export function TrackBackdrop({ faded = false, withCar = false }: TrackBackdropP
           </g>
           {/* болид первого пилота */}
           <g className="track__car">
-            <rect x="420" y="676" width="42" height="12" />
-            <rect x="428" y="670" width="22" height="6" />
+            <rect x="420" y="752" width="42" height="12" />
+            <rect x="428" y="746" width="22" height="6" />
           </g>
         </>
       )}

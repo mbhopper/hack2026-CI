@@ -7,6 +7,7 @@ import { LocationsPage } from './pages/LocationsPage.tsx'
 import { LocationPage } from './pages/LocationPage.tsx'
 import { SuspectsPage } from './pages/SuspectsPage.tsx'
 import { InterrogationPage } from './pages/InterrogationPage.tsx'
+import { AccusationPage } from './pages/AccusationPage.tsx'
 import { RequireAuth } from './auth/RequireAuth.tsx'
 import { routes } from './routes.ts'
 
@@ -54,6 +55,14 @@ export default function App() {
         element={
           <RequireAuth>
             <InterrogationPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path={routes.accusation(':id')}
+        element={
+          <RequireAuth>
+            <AccusationPage />
           </RequireAuth>
         }
       />

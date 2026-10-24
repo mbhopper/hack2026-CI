@@ -17,4 +17,5 @@ export const crashSite: Location = {
   start: { x: 172, y: 84, dir: 'right' },
   clues,
   rain: true,
+  music: 'premonition',
 }

@@ -1,4 +1,6 @@
 import type { Direction } from '../characters.ts'
+import type { Topic } from '../dialogues.ts'
+import type { TrackId } from '../music.ts'
 import type { Clue } from '../story.ts'
 
 /** Прямоугольник в пикселях сцены 320×180 */
@@ -27,6 +29,26 @@ export interface Location {
   start: Point & { dir: Direction }
   clues: Clue[]
   rain: boolean
+  /** Фоновый трек локации */
+  music: TrackId
+  /** С кем в локации можно поговорить */
+  npc?: Npc
+}
+
+/** Свидетель в локации: стоит на месте, с ним говорят, как на допросе */
+export interface Npc {
+  /** Ключ для заданных вопросов (topicKey) */
+  id: string
+  name: string
+  /** Подойдя сюда, можно заговорить */
+  area: Rect
+  topics: Topic<string>[]
+  portraits: Record<string, string>
+  idleMood: string
+  /** Лист кадров */
+  sheet: string
+  /** Рисует свидетеля поверх фона; talking — сейчас идёт разговор */
+  draw(ctx: CanvasRenderingContext2D, sheet: HTMLImageElement, time: number, talking: boolean): void
 }
 
 export function isWalkable(location: Location, x: number, y: number): boolean {

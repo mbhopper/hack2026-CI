@@ -46,6 +46,26 @@
   color: var(--color-text-dim);
 }
 
+.cutscene__rotate {
+  display: none;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--color-warning);
+}
+
+@media (hover: none) {
+  .cutscene__keys {
+    display: none;
+  }
+}
+
+@media (orientation: portrait) and (max-width: 600px) {
+  .cutscene__rotate {
+    display: block;
+  }
+}
+
 .cutscene__overlay {
   position: absolute;
   inset: 0;
@@ -61,7 +81,58 @@
   padding: 0 calc(var(--px) * 16);
   text-align: center;
   text-shadow: 0 calc(var(--px) * 1) 0 #000;
+  white-space: pre-line;
   animation: cutscene-fade 0.8s ease both;
+}
+
+.cutscene__caption--sm {
+  font-size: clamp(9px, calc(var(--px) * 4), 22px);
+  line-height: 2.2;
+  color: var(--color-text);
+}
+
+.cutscene__dialogue {
+  position: absolute;
+  left: calc(var(--px) * 8);
+  right: calc(var(--px) * 8);
+  bottom: calc(var(--px) * 6);
+  display: flex;
+  align-items: flex-start;
+  gap: calc(var(--px) * 4);
+  padding: calc(var(--px) * 3);
+  background: rgba(11, 15, 14, 0.92);
+  border: 1px solid var(--color-surface-border);
+  border-top: calc(var(--px) * 1) solid var(--color-warning);
+}
+
+.cutscene__dialogue[data-side='right'] {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+.cutscene__dialogue-portrait {
+  flex: none;
+  width: var(--portrait);
+  height: var(--portrait);
+  image-rendering: pixelated;
+  background: var(--color-input);
+  border: 1px solid var(--color-surface-border);
+}
+
+.cutscene__dialogue p {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: clamp(12px, calc(var(--px) * 5), 26px);
+  line-height: 1.45;
+}
+
+.cutscene__dialogue b {
+  display: block;
+  margin-bottom: calc(var(--px) * 1.5);
+  font-family: var(--font-pixel);
+  font-size: clamp(9px, calc(var(--px) * 3.5), 18px);
+  text-transform: uppercase;
+  color: var(--color-warning);
 }
 
 .cutscene__caption--md {
@@ -215,5 +286,41 @@
   .cutscene__caption,
   .cutscene__photo {
     animation: none;
+  }
+}
+
+/* телефон вертикально: под кадром много места, диалог и субтитры уходят туда */
+@media (orientation: portrait) and (max-width: 600px) {
+  .cutscene__stage {
+    overflow: visible;
+  }
+
+  .cutscene__dialogue,
+  .cutscene__bottom {
+    top: calc(100% + 16px);
+    bottom: auto;
+    left: 0;
+    right: 0;
+  }
+
+  .cutscene__dialogue p {
+    font-size: 14px;
+  }
+
+  .cutscene__dialogue b {
+    font-size: 10px;
+  }
+}
+
+/* телефон горизонтально: кнопки наверх, чтобы не закрывать диалог */
+@media (max-height: 480px) {
+  .cutscene__controls {
+    top: 8px;
+    bottom: auto;
+  }
+
+  .cutscene__control {
+    padding: 6px 10px;
+    font-size: 9px;
   }
 }

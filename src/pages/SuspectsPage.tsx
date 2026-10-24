@@ -1,22 +1,28 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '../components/Button.tsx'
 import { GameHeader } from '../components/GameHeader.tsx'
 import { PageShell } from '../components/PageShell.tsx'
 import { useAuth } from '../auth/useAuth.ts'
-import { dialogues, topicKey } from '../game/dialogues.ts'
+import { allQuestioned, dialogues, topicKey } from '../game/dialogues.ts'
 import { PORTRAIT_SIZE, suspectPortraits } from '../game/portraits.ts'
 import { loadProgress } from '../game/progress.ts'
 import { suspects } from '../game/story.ts'
+import { useMusic } from '../game/useMusic.ts'
 import { routes } from '../routes.ts'
 import './SuspectsPage.css'
 
 export function SuspectsPage() {
+  // после ошибочного обвинения доигрывает грустная тема
+  const afterWrong = (useLocation().state as { afterWrong?: boolean } | null)?.afterWrong
+  useMusic(afterWrong ? 'sad' : 'interrogation')
   const navigate = useNavigate()
   const [index, setIndex] = useState(0)
   const suspect = suspects[index]
   const { user } = useAuth()
   const [asked] = useState(() => (user ? loadProgress(user.id).asked : []))
+  const canAccuse = allQuestioned(asked)
+  const [accusing, setAccusing] = useState(false)
   const topics = dialogues[suspect.id] ?? []
   const askedCount = topics.filter((topic) => asked.includes(topicKey(suspect.id, topic.id))).length
   const step = (delta: number) => setIndex((current) => (current + delta + suspects.length) % suspects.length)
@@ -35,7 +41,7 @@ export function SuspectsPage() {
   return (
     <PageShell fadedTrack headerSlot={<GameHeader label="Подозреваемые" />}>
       <div className="suspects">
-        <h1 className="suspects__title">Выбор подозреваемого</h1>
+        <h1 className="suspects__title">{accusing ? 'Кто убийца?' : 'Выбор подозреваемого'}</h1>
 
         <div className="suspects__carousel">
           <button type="button" className="suspects__arrow" onClick={() => step(-1)} aria-label="Предыдущий подозреваемый">
@@ -74,8 +80,29 @@ export function SuspectsPage() {
           ))}
         </div>
 
-        <Button onClick={() => navigate(routes.interrogation(suspect.id))}>Допросить</Button>
-        <p className="suspects__hint">← → — листать</p>
+        <div className="suspects__actions">
+          {accusing ? (
+            <>
+              <Button onClick={() => navigate(routes.accusation(suspect.id))}>Обвинить</Button>
+              <Button variant="ghost" onClick={() => setAccusing(false)}>
+                Отмена
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button onClick={() => navigate(routes.interrogation(suspect.id))}>Допросить</Button>
+              {canAccuse && (
+                <Button variant="ghost" onClick={() => setAccusing(true)}>
+                  Назвать убийцу
+                </Button>
+              )}
+            </>
+          )}
+        </div>
+        <p className="suspects__hint">
+          <span className="suspects__keys">← → — листать</span>
+          {!canAccuse && <span>Задайте все вопросы, чтобы назвать убийцу</span>}
+        </p>
       </div>
     </PageShell>
   )

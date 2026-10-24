@@ -7,6 +7,8 @@ const sources = {
   detective: characterSheets.detective,
   mechanic: characterSheets.mechanic,
   mechanicFifth: characterSheets.mechanicFifth,
+  pilot22: characterSheets.pilot22,
+  sponsor: characterSheets.sponsor,
   engineer,
   crashSite,
 }

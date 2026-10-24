@@ -1,16 +1,20 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 import { ButtonLink } from '../components/Button.tsx'
+import { DialogueBox } from '../components/DialogueBox.tsx'
 import { GameHeader } from '../components/GameHeader.tsx'
 import { PageShell } from '../components/PageShell.tsx'
 import { useAuth } from '../auth/useAuth.ts'
 import { characterSheets, drawCharacter, IDLE_FRAME, walkFrame, type Direction } from '../game/characters.ts'
-import { distanceToRect, findLocation, type Location, type Point } from '../game/locations/index.ts'
+import { distanceToRect, findLocation, npcDone, type Location, type Point, type Rect } from '../game/locations/index.ts'
 import { findPath } from '../game/pathfinding.ts'
 import { H, OUTLINE, W } from '../game/pixels.ts'
+import { PORTRAIT_SIZE } from '../game/portraits.ts'
 import { loadProgress, saveProgress } from '../game/progress.ts'
 import { useBackground } from '../game/useBackground.ts'
+import { useConversation } from '../game/useConversation.ts'
 import { useImage } from '../game/useImage.ts'
+import { useMusic } from '../game/useMusic.ts'
 import { routes } from '../routes.ts'
 import './LocationPage.css'
 
@@ -22,6 +26,8 @@ const SPEED = 56
 const REACH = 22
 /** Кадров ходьбы в секунду */
 const STEPS_PER_SECOND = 8
+/** id цели «свидетель» среди улик */
+const NPC = 'npc'
 
 interface Drop {
   x: number
@@ -37,13 +43,16 @@ function makeRain(count: number): Drop[] {
   }))
 }
 
-function nearestClue(location: Location, x: number, y: number): string | null {
+/** Ближайшая улика или свидетель в пределах досягаемости */
+function nearestTarget(location: Location, x: number, y: number): string | null {
+  const targets: { id: string; rect: Rect }[] = location.clues.map((clue) => ({ id: clue.id, rect: clue }))
+  if (location.npc) targets.push({ id: NPC, rect: location.npc.area })
   let best: string | null = null
   let bestDistance = REACH
-  for (const clue of location.clues) {
-    const distance = distanceToRect(clue, x, y)
+  for (const { id, rect } of targets) {
+    const distance = distanceToRect(rect, x, y)
     if (distance <= bestDistance) {
-      best = clue.id
+      best = id
       bestDistance = distance
     }
   }
@@ -58,6 +67,7 @@ export function LocationPage() {
 }
 
 function LocationScreen({ location }: { location: Location }) {
+  useMusic(location.music)
   const { user } = useAuth()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [examined, setExamined] = useState<string[]>(() => (user ? loadProgress(user.id).examined : []))
@@ -66,6 +76,16 @@ function LocationScreen({ location }: { location: Location }) {
 
   const background = useBackground(location)
   const detective = useImage(characterSheets.detective)
+  const { npc } = location
+  const npcSheet = useImage(npc?.sheet ?? '')
+  const talk = useConversation(npc?.id ?? '', npc?.topics ?? [], npc?.idleMood ?? 'calm')
+  // кадры и обработчики читают свежие значения через ref
+  const askedRef = useRef(talk.asked)
+  const talkingRef = useRef(false)
+  useEffect(() => {
+    askedRef.current = talk.asked
+    talkingRef.current = activeId === NPC
+  })
 
   const player = useRef({ ...location.start, moving: false, step: 0 })
   const path = useRef<Point[]>([])
@@ -81,6 +101,9 @@ function LocationScreen({ location }: { location: Location }) {
   const examine = useCallback(
     (clueId: string) => {
       setActiveId(clueId)
+      // закрытая улика: показываем подсказку, но в блокнот не пишем
+      const clue = location.clues.find((item) => item.id === clueId)
+      if (!clue || (clue.requires && !askedRef.current.includes(clue.requires))) return
       setExamined((current) => {
         if (current.includes(clueId)) return current
         const next = [...current, clueId]
@@ -88,7 +111,7 @@ function LocationScreen({ location }: { location: Location }) {
         return next
       })
     },
-    [user],
+    [location, user],
   )
 
   useEffect(() => {
@@ -135,13 +158,14 @@ function LocationScreen({ location }: { location: Location }) {
         p.step += dt * STEPS_PER_SECOND
       }
 
-      const near = nearestClue(location, p.x, p.y)
+      const near = nearestTarget(location, p.x, p.y)
       if (near !== nearRef.current) {
         nearRef.current = near
         setNearId(near)
       }
 
       ctx.drawImage(background, 0, 0)
+      if (npc && npcSheet) npc.draw(ctx, npcSheet, now / 1000, talkingRef.current)
 
       const goal = path.current[path.current.length - 1]
       if (goal) {
@@ -180,7 +204,7 @@ function LocationScreen({ location }: { location: Location }) {
     }
     raf = requestAnimationFrame(frame)
     return () => cancelAnimationFrame(raf)
-  }, [background, detective, location])
+  }, [background, detective, location, npc, npcSheet])
 
   const onStageClick = (event: MouseEvent<HTMLCanvasElement>) => {
     const rect = event.currentTarget.getBoundingClientRect()
@@ -192,7 +216,11 @@ function LocationScreen({ location }: { location: Location }) {
 
   const clues = location.clues
   const active = clues.find((clue) => clue.id === activeId) ?? null
-  const near = clues.find((clue) => clue.id === nearId) ?? null
+  const isLocked = (clue: (typeof clues)[number]) => Boolean(clue.requires && !talk.asked.includes(clue.requires))
+  const talked = npc ? npcDone(npc, talk.asked) : false
+  const found = clues.filter((clue) => examined.includes(clue.id)).length + (talked ? 1 : 0)
+  const total = clues.length + (npc ? 1 : 0)
+  const nearTitle = nearId === NPC ? npc?.name : clues.find((clue) => clue.id === nearId)?.title
 
   return (
     <PageShell fadedTrack headerSlot={<GameHeader label={location.title} />}>
@@ -230,20 +258,60 @@ function LocationScreen({ location }: { location: Location }) {
               </button>
             )
           })}
-          {near && (
-            <button type="button" className="site__inspect" onClick={() => examine(near.id)}>
-              <kbd>E</kbd> Осмотреть: {near.title}
+          {npc && (
+            <button
+              type="button"
+              className={`site__spot${activeId === NPC ? ' site__spot--active' : ''}`}
+              style={{ left: pct(npc.area.x, W), top: pct(npc.area.y, H), width: pct(npc.area.w, W), height: pct(npc.area.h, H) }}
+              onClick={() => walkTo({ x: npc.area.x + npc.area.w / 2, y: npc.area.y + npc.area.h })}
+              aria-label={`Подойти: ${npc.name}${talked ? ', разговор окончен' : ''}`}
+            >
+              {talked && (
+                <span className="site__marker" aria-hidden="true">
+                  ✓
+                </span>
+              )}
+            </button>
+          )}
+          {nearId && (
+            <button type="button" className="site__inspect" onClick={() => examine(nearId)}>
+              <kbd>E</kbd> {nearId === NPC ? 'Поговорить' : 'Осмотреть'}: {nearTitle}
             </button>
           )}
         </div>
-        <p className="site__controls">Щёлкните по сцене, куда идти · подойдите к месту, чтобы осмотреть его</p>
+        <p className="site__controls">
+          Нажмите на сцену, куда идти · подойдите к месту, чтобы осмотреть его{npc ? ', или к свидетелю, чтобы поговорить' : ''}
+        </p>
 
         <div className="site__panels">
           <section className="site__note" aria-live="polite">
-            {active ? (
+            {activeId === NPC && npc ? (
+              <div className="site__talk">
+                <div className="site__witness">
+                  <img
+                    className="site__witness-portrait"
+                    src={npc.portraits[talk.mood]}
+                    alt={npc.name}
+                    width={PORTRAIT_SIZE * 2}
+                    height={PORTRAIT_SIZE * 2}
+                  />
+                  <h2>{npc.name}</h2>
+                </div>
+                <DialogueBox talk={talk} speaker={npc.name} placeholder="Выберите, о чём спросить." />
+              </div>
+            ) : active ? (
               <>
                 <h2>{active.title}</h2>
-                <p>{active.note}</p>
+                {isLocked(active) ? (
+                  <p>{active.locked}</p>
+                ) : (
+                  <>
+                    {active.image && (
+                      <img className="site__closeup" src={active.image} alt={`${active.title} крупным планом`} />
+                    )}
+                    <p>{active.note}</p>
+                  </>
+                )}
               </>
             ) : (
               <p className="site__placeholder">Подойдите к чему-нибудь интересному и нажмите «Осмотреть».</p>
@@ -252,7 +320,7 @@ function LocationScreen({ location }: { location: Location }) {
 
           <section className="site__notebook">
             <h2>
-              Блокнот <span>{clues.filter((clue) => examined.includes(clue.id)).length}/{clues.length}</span>
+              Блокнот <span>{found}/{total}</span>
             </h2>
             <ul>
               {clues.map((clue) => (
@@ -260,9 +328,22 @@ function LocationScreen({ location }: { location: Location }) {
                   {examined.includes(clue.id) ? clue.title : '???'}
                 </li>
               ))}
+              {npc && (
+                <li data-found={talked}>{talked ? `Разговор: ${npc.name.toLowerCase()}` : '???'}</li>
+              )}
             </ul>
+            {talk.facts.length > 0 && (
+              <ul className="site__facts">
+                {talk.facts.map((item) => (
+                  <li key={item.id}>{item.fact}</li>
+                ))}
+              </ul>
+            )}
             <ButtonLink to={routes.locations} variant="ghost" block>
-              ← К локациям
+              <span className="btn__arrow" aria-hidden="true">
+                ←
+              </span>
+              К локациям
             </ButtonLink>
           </section>
         </div>
