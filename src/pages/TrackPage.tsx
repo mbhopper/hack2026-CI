@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../components/Button.tsx'
+import { GameHeader } from '../components/GameHeader.tsx'
 import { PageShell } from '../components/PageShell.tsx'
 import { useAuth } from '../auth/useAuth.ts'
 import { drawCrashSite } from '../game/crashSite.ts'
@@ -48,7 +49,7 @@ export function TrackPage() {
   }
 
   return (
-    <PageShell fadedTrack headerSlot={<span>Спустя два дня</span>}>
+    <PageShell fadedTrack headerSlot={<GameHeader label="Спустя два дня" />}>
       <div className="site">
         <div className="site__intro">
           <h1 className="site__title">Место аварии</h1>

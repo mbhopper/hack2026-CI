@@ -1,0 +1,28 @@
+.game-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.game-header__logout {
+  padding: 8px 12px;
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.game-header__logout:hover {
+  border-color: var(--color-accent-soft);
+  color: var(--color-accent-soft);
+}
+
+@media (max-width: 480px) {
+  .game-header > span {
+    display: none;
+  }
+}
