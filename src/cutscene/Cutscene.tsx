@@ -151,6 +151,17 @@ export function Cutscene({ playerName, onFinish }: CutsceneProps) {
     return () => window.removeEventListener('keydown', onKey)
   }, [phase, finish, togglePause])
 
+  // Вкладка ушла в фон: кадры больше не приходят, а звук бы продолжил играть.
+  // Ставим на паузу, чтобы картинка и звук не разъехались.
+  useEffect(() => {
+    if (phase !== 'playing') return
+    const onVisibility = () => {
+      if (document.hidden && !clock.current.paused) togglePause()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [phase, togglePause])
+
   useEffect(
     () => () => {
       cancelAnimationFrame(rafRef.current)

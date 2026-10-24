@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../components/Button.tsx'
+import { GameHeader } from '../components/GameHeader.tsx'
 import { PageShell } from '../components/PageShell.tsx'
 import { PixelSprite } from '../components/PixelSprite.tsx'
 import { personSprite } from '../game/sprites.ts'
@@ -26,7 +27,7 @@ export function SuspectsPage() {
   }, [])
 
   return (
-    <PageShell fadedTrack headerSlot={<span>Подозреваемые</span>}>
+    <PageShell fadedTrack headerSlot={<GameHeader label="Подозреваемые" />}>
       <div className="suspects">
         <h1 className="suspects__title">Выбор подозреваемого</h1>
 

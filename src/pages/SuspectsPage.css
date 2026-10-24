@@ -15,7 +15,7 @@
 
 .suspects__carousel {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 16px;
   width: 100%;
@@ -107,6 +107,26 @@
   from {
     opacity: 0;
     transform: translateY(8px);
+  }
+}
+
+@media (max-width: 480px) {
+  .suspects .btn {
+    max-width: 100%;
+    padding-inline: 16px;
+  }
+
+  .suspects__carousel {
+    gap: 8px;
+  }
+
+  .suspects__arrow {
+    width: 40px;
+    height: 40px;
+  }
+
+  .suspects__portrait {
+    width: 150px;
   }
 }
 

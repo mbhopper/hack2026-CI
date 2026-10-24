@@ -1,5 +1,6 @@
 import { Navigate, useParams } from 'react-router-dom'
 import { ButtonLink } from '../components/Button.tsx'
+import { GameHeader } from '../components/GameHeader.tsx'
 import { PageShell } from '../components/PageShell.tsx'
 import { PixelSprite } from '../components/PixelSprite.tsx'
 import { personSprite } from '../game/sprites.ts'
@@ -14,7 +15,7 @@ export function InterrogationPage() {
   if (!suspect) return <Navigate to={routes.suspects} replace />
 
   return (
-    <PageShell fadedTrack headerSlot={<span>Допрос</span>}>
+    <PageShell fadedTrack headerSlot={<GameHeader label="Допрос" />}>
       <div className="suspects">
         <div className="suspects__portrait">
           <PixelSprite sprite={personSprite(suspect.sprite, suspect.outfit)} scale={8} label={suspect.name} />
