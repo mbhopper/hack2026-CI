@@ -66,7 +66,7 @@ function sparks(ctx: CanvasRenderingContext2D, x: number, y: number, frame: numb
   }
 }
 
-/** «!» над шлемом, как над детективом у улики */
+/** Восклицательный знак над шлемом */
 function alert(ctx: CanvasRenderingContext2D, x: number, y: number) {
   fill(ctx, OUTLINE, x - 1, y - 1, 8, 12)
   fill(ctx, '#e8c43a', x, y, 6, 10)

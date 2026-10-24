@@ -27,7 +27,7 @@ function writeJson(key: string, value: unknown) {
   try {
     localStorage.setItem(key, JSON.stringify(value))
   } catch {
-    // приватный режим или переполнено хранилище — мок просто забудет данные
+    // приватный режим или переполненное хранилище: данные мока не сохранятся
   }
 }
 

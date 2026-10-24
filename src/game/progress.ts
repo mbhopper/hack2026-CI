@@ -1,11 +1,11 @@
 /**
- * Прогресс игрока. Пока бэкенда нет, храним в localStorage по id игрока;
- * потом это станет полем профиля на сервере (задача кейса про сохранения).
+ * Прогресс игрока в localStorage по id пользователя. Когда появится бэкенд,
+ * станет полем профиля на сервере.
  */
 
 export interface Progress {
   introSeen: boolean
-  /** id осмотренных улик на трассе */
+  /** id осмотренных улик во всех локациях */
   examined: string[]
 }
 
@@ -26,7 +26,7 @@ export function saveProgress(userId: string, patch: Partial<Progress>): Progress
   try {
     localStorage.setItem(key(userId), JSON.stringify(next))
   } catch {
-    // приватный режим или переполнение — игра просто не запомнит прогресс
+    // приватный режим или переполненное хранилище: прогресс не сохранится
   }
   return next
 }
