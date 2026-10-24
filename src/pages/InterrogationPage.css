@@ -1,0 +1,160 @@
+.talk {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  gap: 20px 32px;
+  width: min(100%, 1080px);
+  align-items: start;
+}
+
+.talk__who {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.talk__who .suspects__role {
+  margin: 6px 0 0;
+}
+
+.talk__name {
+  margin: 0;
+  font-family: var(--font-pixel);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.talk__others {
+  display: grid;
+  gap: 8px;
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.talk__others .btn {
+  font-size: 10px;
+}
+
+.talk__panel {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: grid;
+  gap: 18px;
+}
+
+.talk__log {
+  display: grid;
+  gap: 12px;
+  min-height: 220px;
+  align-content: start;
+  padding: 22px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-border);
+}
+
+.talk__line {
+  margin: 0;
+  padding: 10px 14px;
+  border-left: 3px solid var(--color-surface-border);
+  animation: talk-in 0.3s ease-out both;
+}
+
+.talk__line b {
+  font-weight: 700;
+}
+
+.talk__line--detective {
+  border-color: var(--color-accent);
+  color: var(--color-text-muted);
+}
+
+.talk__line--suspect {
+  border-color: var(--color-warning);
+  background: rgb(255 255 255 / 3%);
+}
+
+.talk__noted {
+  margin: 4px 0 0;
+  padding: 10px 14px;
+  border: 1px dashed var(--color-accent-soft);
+  color: var(--color-accent-soft);
+  font-size: 14px;
+  animation: talk-in 0.3s ease-out both;
+}
+
+.talk__placeholder {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.talk__questions {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.talk__ask {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--color-surface-border);
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.talk__ask::before {
+  content: '› ';
+  color: var(--color-accent-soft);
+}
+
+.talk__ask[data-asked='true'] {
+  color: var(--color-text-dim);
+}
+
+.talk__ask[data-asked='true']::before {
+  content: '✓ ';
+}
+
+.talk__ask:hover,
+.talk__ask[aria-pressed='true'] {
+  border-color: var(--color-accent-soft);
+  background: rgba(61, 191, 114, 0.08);
+}
+
+.talk__locked {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-text-dim);
+}
+
+@keyframes talk-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@media (max-width: 760px) {
+  .talk {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+  }
+
+  /* на телефоне сначала разговор, потом переход к другим */
+  .talk__panel,
+  .talk__others {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .talk__line,
+  .talk__noted {
+    animation: none;
+  }
+}

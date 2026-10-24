@@ -132,8 +132,20 @@ export interface Fact {
   text: string
 }
 
-/** Заполнится вместе с допросами */
-export const facts: Fact[] = []
+export const facts: Fact[] = [
+  { id: 'pilot-no-brakes', suspect: 'pilot', text: 'Болид №7 не тормозил перед поворотом, пилот даже не дёрнулся.' },
+  { id: 'pilot-leaving', suspect: 'pilot', text: 'Об уходе пилота №7 из команды знали только он сам, пилот №22 и спонсор.' },
+  { id: 'pilot-radio', suspect: 'pilot', text: 'По радио пилот №7 кричал, что газ держится сам и машина не слушается.' },
+  { id: 'pilot-oil', suspect: 'pilot', text: 'После гонки у спонсора был испачкан маслом рукав пиджака.' },
+  { id: 'mechanic-fifth', suspect: 'mechanic', text: 'На пит-стопе у болида №7 стоял пятый человек в форме команды.' },
+  { id: 'mechanic-electronics', suspect: 'mechanic', text: 'Механики не трогают электронику: круиз-контроль настраивают с ноутбука или прямо в кокпите.' },
+  { id: 'mechanic-cockpit', suspect: 'mechanic', text: 'В 14:38 пятый наклонился в кокпит болида №7, механик видел только спину и низкую кепку.' },
+  { id: 'mechanic-badge', suspect: 'mechanic', text: 'Без бейджа в бокс не пускают, если только у тебя нет пропуска поважнее.' },
+  { id: 'sponsor-alibi', suspect: 'sponsor', text: 'Спонсор утверждает, что всю гонку не выходил из VIP-ложи.' },
+  { id: 'sponsor-toilet', suspect: 'sponsor', text: 'Прижатый журналом турникета, спонсор сказал, что на 16 минут выходил в уборную.' },
+  { id: 'sponsor-insurance', suspect: 'sponsor', text: 'Спонсор признал страховку на 50 миллионов и проговорился, что знал про письмо об уходе.' },
+  { id: 'sponsor-nervous', suspect: 'sponsor', text: 'Услышав про пятого механика у кокпита, спонсор оборвал допрос и потребовал адвоката.' },
+]
 
 export const factById = (id: string) => facts.find((fact) => fact.id === id)
 

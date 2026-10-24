@@ -25,7 +25,7 @@ export function Notebook() {
   return (
     <>
       <button type="button" className="notebook__toggle" onClick={() => dialogRef.current?.showModal()}>
-        Блокнот <span>{found.length}</span>
+        Блокнот <span>{found.length + notes.length}</span>
       </button>
 
       <dialog
