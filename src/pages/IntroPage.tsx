@@ -14,7 +14,7 @@ export function IntroPage() {
       playerName={user?.nickname ?? 'детектив'}
       onFinish={() => {
         if (user) saveProgress(user.id, { introSeen: true })
-        navigate(routes.track)
+        navigate(routes.locations)
       }}
     />
   )

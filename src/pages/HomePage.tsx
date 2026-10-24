@@ -10,7 +10,7 @@ export function HomePage() {
       headerSlot={<span>Круг 3/3</span>}
       footerSlot={
         <>
-          <span>Команда [НАЗВАНИЕ КОМАНДЫ]</span>
+          <span>Команда «прЕколисты»</span>
           <span>Кейс банка «Центр-инвест» · Разработка игры</span>
         </>
       }
