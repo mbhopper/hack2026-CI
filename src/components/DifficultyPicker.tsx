@@ -6,9 +6,11 @@ import './DifficultyPicker.css'
 export function DifficultyPicker() {
   const { state, dispatch } = useGame()
   const current = difficulties.find((item) => item.id === state.difficulty) ?? difficulties[1]
+  // после первого обвинения сложность не меняем, иначе можно обойти лимит попыток
+  const locked = state.attempts > 0
 
   return (
-    <fieldset className="difficulty">
+    <fieldset className="difficulty" disabled={locked}>
       <legend>Сложность</legend>
       <div className="difficulty__options">
         {difficulties.map((item) => (
@@ -24,7 +26,10 @@ export function DifficultyPicker() {
           </label>
         ))}
       </div>
-      <p className="difficulty__text">{current.text}</p>
+      <p className="difficulty__text">
+        {current.text}
+        {locked && ' Сменить сложность можно в новом деле.'}
+      </p>
     </fieldset>
   )
 }

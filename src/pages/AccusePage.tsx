@@ -68,7 +68,9 @@ export function AccusePage() {
     state.difficulty === 'hard' &&
     state.attempts >= HARD_ATTEMPTS &&
     !(state.accusation && verdict(state.accusation) === 'solved')
-  if (outOfAttempts) return <Navigate to={routes.ending} replace />
+  const solved = state.accusation !== null && verdict(state.accusation) === 'solved'
+  // раскрытое дело не переобвинить, проигранное — тоже
+  if (outOfAttempts || solved) return <Navigate to={routes.ending} replace />
 
   if (silent.length > 0) {
     return (

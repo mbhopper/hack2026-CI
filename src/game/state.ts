@@ -116,7 +116,8 @@ export function reducer(state: GameState, action: GameAction): GameState {
     case 'accuse':
       return { ...state, accusation: action.accusation, attempts: state.attempts + 1 }
     case 'difficulty':
-      return { ...state, difficulty: action.difficulty }
+      // та же защита, что и в интерфейсе: после обвинения уровень зафиксирован
+      return state.attempts > 0 ? state : { ...state, difficulty: action.difficulty }
     case 'reset':
       // новое расследование: катсцену и сложность помним
       return { ...initialState, introSeen: state.introSeen, difficulty: state.difficulty }
