@@ -112,6 +112,7 @@ function Interrogation({ suspect }: { suspect: Suspect }) {
           <ButtonLink to={routes.suspects} variant="ghost">
             ← Все подозреваемые
           </ButtonLink>
+          <ButtonLink to={routes.accuse}>Выдвинуть обвинение</ButtonLink>
         </nav>
       </div>
     </PageShell>

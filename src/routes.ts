@@ -12,4 +12,10 @@ export const routes = {
   suspects: '/suspects',
   /** Допрос выбранного подозреваемого */
   interrogation: (id: string) => `/suspects/${id}`,
+  /** Обвинение: кто, как и зачем */
+  accuse: '/accuse',
+  /** Чем закончилось дело */
+  ending: '/ending',
+  /** Экран о профессии детектива после раскрытого дела */
+  career: '/career',
 } as const

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Button } from '../components/Button.tsx'
+import { Button, ButtonLink } from '../components/Button.tsx'
 import { GameHeader } from '../components/GameHeader.tsx'
 import { PageShell } from '../components/PageShell.tsx'
 import { PixelSprite } from '../components/PixelSprite.tsx'
@@ -65,6 +65,9 @@ export function SuspectsPage() {
         </div>
 
         <Button onClick={() => navigate(routes.interrogation(suspect.id))}>Выбрать подозреваемого</Button>
+        <ButtonLink to={routes.accuse} variant="ghost">
+          Выдвинуть обвинение
+        </ButtonLink>
         <p className="suspects__hint">← → — листать</p>
       </div>
     </PageShell>

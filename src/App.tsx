@@ -7,6 +7,9 @@ import { IntroPage } from './pages/IntroPage.tsx'
 import { LocationRoute } from './pages/LocationPage.tsx'
 import { SuspectsPage } from './pages/SuspectsPage.tsx'
 import { InterrogationPage } from './pages/InterrogationPage.tsx'
+import { AccusePage } from './pages/AccusePage.tsx'
+import { EndingPage } from './pages/EndingPage.tsx'
+import { CareerPage } from './pages/CareerPage.tsx'
 import { RequireAuth } from './auth/RequireAuth.tsx'
 import { RequireInspection } from './game/RequireInspection.tsx'
 import { ScrollToTop } from './components/ScrollToTop.tsx'
@@ -62,6 +65,36 @@ export default function App() {
             <RequireAuth>
               <RequireInspection>
                 <InterrogationPage />
+              </RequireInspection>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path={routes.accuse}
+          element={
+            <RequireAuth>
+              <RequireInspection>
+                <AccusePage />
+              </RequireInspection>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path={routes.ending}
+          element={
+            <RequireAuth>
+              <RequireInspection>
+                <EndingPage />
+              </RequireInspection>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path={routes.career}
+          element={
+            <RequireAuth>
+              <RequireInspection>
+                <CareerPage />
               </RequireInspection>
             </RequireAuth>
           }
