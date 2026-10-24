@@ -8,6 +8,8 @@ import './Cutscene.css'
 
 interface CutsceneProps {
   playerName: string
+  /** Катсцену уже смотрели — предложим сразу перейти к расследованию */
+  seen?: boolean
   /** skipped = true, если игрок нажал «Пропустить» */
   onFinish(skipped: boolean): void
 }
@@ -36,7 +38,7 @@ function locate(time: number) {
   return null
 }
 
-export function Cutscene({ playerName, onFinish }: CutsceneProps) {
+export function Cutscene({ playerName, seen, onFinish }: CutsceneProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [phase, setPhase] = useState<Phase>('ready')
   const [overlay, setOverlay] = useState<Overlay>({})
@@ -181,10 +183,18 @@ export function Cutscene({ playerName, onFinish }: CutsceneProps) {
         {phase === 'ready' ? (
           <div className="cutscene__ready">
             <p className="cutscene__ready-kicker">Последний круг</p>
-            <Button onClick={start} autoFocus>
-              Нажмите, чтобы начать
-            </Button>
+            <div className="cutscene__ready-actions">
+              <Button onClick={start} autoFocus>
+                {seen ? 'Смотреть снова' : 'Нажмите, чтобы начать'}
+              </Button>
+              {seen && (
+                <Button variant="ghost" onClick={() => finish(true)}>
+                  К расследованию
+                </Button>
+              )}
+            </div>
             <p className="cutscene__ready-hint">Включите звук · Esc — пропустить · Пробел — пауза</p>
+            <p className="cutscene__rotate">Поверните телефон горизонтально — так кадр будет крупнее</p>
           </div>
         ) : (
           <div className="cutscene__overlay" aria-live="polite">

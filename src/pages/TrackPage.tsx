@@ -7,7 +7,9 @@ import { useAuth } from '../auth/useAuth.ts'
 import { drawCrashSite } from '../game/crashSite.ts'
 import { loadProgress, saveProgress } from '../game/progress.ts'
 import { H, W } from '../game/scenery.ts'
-import { clues } from '../game/story.ts'
+import { clues, finishPhoto } from '../game/story.ts'
+import { finishPhotoCanvas } from '../game/photo.ts'
+import { PixelSprite } from '../components/PixelSprite.tsx'
 import { routes } from '../routes.ts'
 import './TrackPage.css'
 
@@ -37,8 +39,13 @@ export function TrackPage() {
     return () => cancelAnimationFrame(raf)
   }, [])
 
-  const active = useMemo(() => clues.find((clue) => clue.id === activeId) ?? null, [activeId])
-  const allFound = examined.length >= clues.length
+  const active = useMemo(
+    () => (activeId === finishPhoto.id ? finishPhoto : (clues.find((clue) => clue.id === activeId) ?? null)),
+    [activeId],
+  )
+  const photo = useMemo(() => finishPhotoCanvas(), [])
+  const foundCount = clues.filter((clue) => examined.includes(clue.id)).length
+  const allFound = foundCount === clues.length
 
   const examine = (id: string) => {
     setActiveId(id)
@@ -84,6 +91,9 @@ export function TrackPage() {
             {active ? (
               <>
                 <h2>{active.title}</h2>
+                {active.id === finishPhoto.id && (
+                  <PixelSprite className="site__photo" sprite={photo} scale={2} label="Фото с финиша" />
+                )}
                 <p>{active.note}</p>
               </>
             ) : (
@@ -93,12 +103,23 @@ export function TrackPage() {
 
           <section className="site__notebook">
             <h2>
-              Блокнот <span>{examined.length}/{clues.length}</span>
+              Блокнот <span>{foundCount}/{clues.length}</span>
             </h2>
             <ul>
+              <li data-found="true">
+                <button type="button" onClick={() => setActiveId(finishPhoto.id)}>
+                  {finishPhoto.title}
+                </button>
+              </li>
               {clues.map((clue) => (
                 <li key={clue.id} data-found={examined.includes(clue.id)}>
-                  {examined.includes(clue.id) ? clue.title : '???'}
+                  {examined.includes(clue.id) ? (
+                    <button type="button" onClick={() => setActiveId(clue.id)}>
+                      {clue.title}
+                    </button>
+                  ) : (
+                    '???'
+                  )}
                 </li>
               ))}
             </ul>

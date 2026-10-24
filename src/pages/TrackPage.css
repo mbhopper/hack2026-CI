@@ -116,6 +116,26 @@
   color: var(--color-text);
 }
 
+.site__notebook li button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.site__notebook li button:hover {
+  color: var(--color-accent-soft);
+}
+
+.site__photo {
+  display: block;
+  max-width: 100%;
+  height: auto !important;
+  margin: 0 0 14px;
+}
+
 .site__placeholder {
   color: var(--color-text-dim);
 }

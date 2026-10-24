@@ -289,31 +289,46 @@ export function drawPitBox(ctx: CanvasRenderingContext2D, light = 1) {
   for (let x = 0; x < W; x += 24) fill(ctx, '#4a5150', x, 150, 12, 2)
 }
 
-/** Пит-уолл: инженер у мониторов, на графике телеметрии скорость лезет вверх */
-export function drawPitWall(ctx: CanvasRenderingContext2D, telemetry: number, time: number) {
-  fill(ctx, '#0a0f0d', 0, 0, W, H)
-  fill(ctx, '#151d1a', 0, 120, W, 60)
-  fill(ctx, '#1f2a25', 0, 118, W, 4)
+/**
+ * Пит-уолл крупным планом: инженер между двумя мониторами, на правом
+ * телеметрия болида №7 лезет в красное. Рисуем в половинном разрешении
+ * и растягиваем ровно вдвое — так пиксели инженера и мониторов одного размера.
+ */
+export function drawPitWall(
+  ctx: CanvasRenderingContext2D,
+  telemetry: number,
+  time: number,
+  engineer: HTMLCanvasElement,
+) {
+  const { canvas, ctx: half } = offscreen(W / 2, H / 2)
+  fill(half, '#0a0f0d', 0, 0, 160, 90)
+  fill(half, '#151d1a', 0, 62, 160, 28)
+  fill(half, '#1f2a25', 0, 61, 160, 2)
+
   const screens = [
-    { x: 40, y: 30 },
-    { x: 124, y: 30 },
-    { x: 208, y: 30 },
+    { x: 10, live: false },
+    { x: 106, live: true },
   ]
-  screens.forEach(({ x, y }, i) => {
-    fill(ctx, '#2a3530', x - 2, y - 2, 76, 52)
-    fill(ctx, '#06100b', x, y, 72, 48)
-    fill(ctx, '#1f2a25', x + 34, y + 50, 4, 10)
-    for (let gx = 0; gx < 72; gx++) {
-      const base = i === 1 ? telemetry : 0.4
-      const value = base * (gx / 72) + Math.sin((gx + time * 30 + i * 20) / 6) * 0.05
-      const gy = y + 44 - Math.round(Math.min(1, Math.max(0, value)) * 40)
-      fill(ctx, i === 1 && telemetry > 0.75 ? '#e04848' : '#3dbf72', x + gx, gy, 1, 1)
+  for (const { x, live } of screens) {
+    fill(half, '#2a3530', x - 1, 11, 46, 32)
+    fill(half, '#06100b', x, 12, 44, 30)
+    fill(half, '#1f2a25', x + 20, 43, 4, 6)
+    for (let gx = 0; gx < 44; gx++) {
+      const base = live ? telemetry : 0.4
+      const value = base * (gx / 44) + Math.sin((gx + time * 20 + x) / 4) * 0.05
+      const gy = 12 + 27 - Math.round(Math.min(1, Math.max(0, value)) * 25)
+      fill(half, live && telemetry > 0.75 ? '#e04848' : '#3dbf72', x + gx, gy, 1, 1)
     }
-  })
-  // стол
-  fill(ctx, '#2a3530', 20, 98, 280, 8)
-  fill(ctx, '#1b2420', 30, 106, 4, 14)
-  fill(ctx, '#1b2420', 286, 106, 4, 14)
+  }
+
+  // инженер сидит за столом, стол закрывает ему пояс
+  half.drawImage(engineer, 72, 36)
+  fill(half, '#2a3530', 6, 48, 148, 4)
+  fill(half, '#1b2420', 12, 52, 2, 9)
+  fill(half, '#1b2420', 146, 52, 2, 9)
+
+  ctx.imageSmoothingEnabled = false
+  ctx.drawImage(canvas, 0, 0, W, H)
 }
 
 /** Косые струи дождя поверх кадра */

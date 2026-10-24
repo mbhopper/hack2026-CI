@@ -19,7 +19,13 @@ export class GameAudio {
     this.ctx = new AudioContext()
     this.master = this.ctx.createGain()
     this.master.gain.value = 0.7
-    this.master.connect(this.ctx.destination)
+    // компрессор не даёт удару и сигналам старта перегрузить колонки
+    const limiter = this.ctx.createDynamicsCompressor()
+    limiter.threshold.value = -10
+    limiter.knee.value = 6
+    limiter.ratio.value = 12
+    this.master.connect(limiter)
+    limiter.connect(this.ctx.destination)
 
     const length = this.ctx.sampleRate * 2
     this.noise = this.ctx.createBuffer(1, length, this.ctx.sampleRate)

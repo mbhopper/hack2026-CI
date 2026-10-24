@@ -11,6 +11,13 @@ export interface Clue {
   h: number
 }
 
+/** Улика, которую детектив получает вместе с делом: снимок из катсцены */
+export const finishPhoto = {
+  id: 'finish-photo',
+  title: 'Фото с финиша',
+  note: 'Снимок сделан, когда болид №22 пересёк финиш. На трибуне за ним видна VIP-ложа: среднее кресло, место спонсора, пустует.',
+}
+
 export const clues: Clue[] = [
   {
     id: 'shift-board',

@@ -9,7 +9,6 @@ import {
   LANE_NEAR,
   TRACK_BOTTOM,
   TRACK_TOP,
-  VIP_X,
   W,
   drawFinishLine,
   drawPitBox,
@@ -24,6 +23,7 @@ import {
 } from '../game/scenery.ts'
 import type { GameAudio } from '../game/audio.ts'
 import { CRASH_SITE_SCROLL, drawCrashSite } from '../game/crashSite.ts'
+import { PHOTO_FRAME, drawFinishPhoto } from '../game/photo.ts'
 import type { Scene } from './types.ts'
 
 const between = (t: number, from: number, to: number) => t >= from && t < to
@@ -257,10 +257,7 @@ export const script: Scene[] = [
     id: 'radio',
     duration: 8,
     draw: ({ ctx, t }) => {
-      drawPitWall(ctx, clamp01(0.8 + t / 40), t)
-      const engineer = personSprite('engineer', outfits.mechanic7)
-      ctx.drawImage(engineer, 136, 64, engineer.width * 3, engineer.height * 3)
-      fill(ctx, '#2a3530', 20, 98, 280, 8)
+      drawPitWall(ctx, clamp01(0.8 + t / 40), t, personSprite('engineer', outfits.mechanic7))
     },
     overlay: (t) => ({
       ...(between(t, 0.3, 3) ? { subtitle: { speaker: 'Инженер', text: 'Седьмой, сбрось скорость!' } } : {}),
@@ -343,19 +340,8 @@ export const script: Scene[] = [
     duration: 5,
     draw: ({ ctx, t }) => {
       fill(ctx, '#050706', 0, 0, W, H)
-      const frameX = 62
-      const frameY = 22
-      fill(ctx, '#e8ece9', frameX, frameY, 196, 116)
-      ctx.save()
-      ctx.beginPath()
-      ctx.rect(frameX + 4, frameY + 4, 188, 100)
-      ctx.clip()
-      // камера смотрит на трибуну так, чтобы VIP-ложа попала в кадр
-      ctx.translate(0, -8)
-      const scroll = (VIP_X - 140) / 0.35
-      drawSideTrack(ctx, { scroll, stands: { sponsorInBox: false, crowd: true } })
-      car(ctx, 'car22', 118, LANE_FAR + 2, 0)
-      ctx.restore()
+      drawFinishPhoto(ctx)
+      const { x: frameX, y: frameY } = PHOTO_FRAME
       // проявление снимка
       ctx.globalAlpha = 1 - clamp01((t - 0.1) / 1.4)
       fill(ctx, '#ffffff', frameX + 4, frameY + 4, 188, 100)
