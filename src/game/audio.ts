@@ -1,0 +1,375 @@
+/**
+ * Все звуки и музыка синтезируются Web Audio прямо в браузере: файлов нет,
+ * лицензий тоже. AudioContext можно запустить только после жеста игрока,
+ * поэтому `GameAudio.create()` вызываем из обработчика клика.
+ */
+
+type Loop = { stop(): void }
+
+export class GameAudio {
+  readonly ctx: AudioContext
+  private readonly master: GainNode
+  private readonly noise: AudioBuffer
+  private loops = new Set<Loop>()
+  private engine: { osc: OscillatorNode[]; gain: GainNode; filter: BiquadFilterNode } | null = null
+  private musicTimer: number | null = null
+  private musicGain: GainNode | null = null
+
+  private constructor() {
+    this.ctx = new AudioContext()
+    this.master = this.ctx.createGain()
+    this.master.gain.value = 0.7
+    this.master.connect(this.ctx.destination)
+
+    const length = this.ctx.sampleRate * 2
+    this.noise = this.ctx.createBuffer(1, length, this.ctx.sampleRate)
+    const data = this.noise.getChannelData(0)
+    for (let i = 0; i < length; i++) data[i] = Math.random() * 2 - 1
+  }
+
+  static create(): GameAudio | null {
+    try {
+      const audio = new GameAudio()
+      void audio.ctx.resume()
+      return audio
+    } catch {
+      return null
+    }
+  }
+
+  get now() {
+    return this.ctx.currentTime
+  }
+
+  pause() {
+    void this.ctx.suspend()
+  }
+
+  resume() {
+    void this.ctx.resume()
+  }
+
+  close() {
+    this.silence()
+    void this.ctx.close()
+  }
+
+  // --- строительные блоки ---
+
+  private envelope(peak: number, attack: number, hold: number, release: number, at = this.now) {
+    const gain = this.ctx.createGain()
+    gain.gain.setValueAtTime(0.0001, at)
+    gain.gain.exponentialRampToValueAtTime(peak, at + attack)
+    gain.gain.setValueAtTime(peak, at + attack + hold)
+    gain.gain.exponentialRampToValueAtTime(0.0001, at + attack + hold + release)
+    gain.connect(this.master)
+    return gain
+  }
+
+  private noiseSource(loop = false) {
+    const source = this.ctx.createBufferSource()
+    source.buffer = this.noise
+    source.loop = loop
+    return source
+  }
+
+  private filter(type: BiquadFilterType, frequency: number, q = 1) {
+    const node = this.ctx.createBiquadFilter()
+    node.type = type
+    node.frequency.value = frequency
+    node.Q.value = q
+    return node
+  }
+
+  private tone(type: OscillatorType, frequency: number, duration: number, peak: number, at = this.now) {
+    const osc = this.ctx.createOscillator()
+    osc.type = type
+    osc.frequency.setValueAtTime(frequency, at)
+    osc.connect(this.envelope(peak, 0.01, duration * 0.6, duration * 0.4, at))
+    osc.start(at)
+    osc.stop(at + duration + 0.05)
+    return osc
+  }
+
+  private burst(filter: BiquadFilterNode, peak: number, attack: number, hold: number, release: number) {
+    const source = this.noiseSource()
+    source.connect(filter)
+    filter.connect(this.envelope(peak, attack, hold, release))
+    source.start()
+    source.stop(this.now + attack + hold + release + 0.05)
+    return source
+  }
+
+  private noiseLoop(filter: BiquadFilterNode, level: number, fadeIn = 1): Loop {
+    const source = this.noiseSource(true)
+    const gain = this.ctx.createGain()
+    gain.gain.setValueAtTime(0.0001, this.now)
+    gain.gain.exponentialRampToValueAtTime(level, this.now + fadeIn)
+    source.connect(filter)
+    filter.connect(gain)
+    gain.connect(this.master)
+    source.start()
+    const loop: Loop = {
+      stop: () => {
+        gain.gain.cancelScheduledValues(this.now)
+        gain.gain.setTargetAtTime(0.0001, this.now, 0.3)
+        source.stop(this.now + 1.5)
+        this.loops.delete(loop)
+      },
+    }
+    this.loops.add(loop)
+    return loop
+  }
+
+  // --- звуки катсцены ---
+
+  beep(high = false) {
+    this.tone('square', high ? 880 : 440, high ? 0.5 : 0.25, 0.18)
+  }
+
+  tireScreech() {
+    const sweep = this.ctx.createOscillator()
+    sweep.type = 'sawtooth'
+    sweep.frequency.setValueAtTime(1800, this.now)
+    sweep.frequency.linearRampToValueAtTime(1200, this.now + 1.4)
+    const band = this.filter('bandpass', 2400, 6)
+    sweep.connect(band)
+    band.connect(this.envelope(0.08, 0.05, 0.8, 0.6))
+    sweep.start()
+    sweep.stop(this.now + 1.6)
+    this.burst(this.filter('bandpass', 3000, 3), 0.25, 0.05, 0.8, 0.6)
+  }
+
+  passBy() {
+    const osc = this.ctx.createOscillator()
+    osc.type = 'sawtooth'
+    osc.frequency.setValueAtTime(420, this.now)
+    osc.frequency.exponentialRampToValueAtTime(190, this.now + 1.2)
+    const low = this.filter('lowpass', 1200)
+    osc.connect(low)
+    low.connect(this.envelope(0.12, 0.5, 0.1, 0.6))
+    osc.start()
+    osc.stop(this.now + 1.3)
+  }
+
+  metalGrind() {
+    const square = this.ctx.createOscillator()
+    square.type = 'square'
+    square.frequency.value = 92
+    const lfo = this.ctx.createOscillator()
+    lfo.frequency.value = 28
+    const lfoGain = this.ctx.createGain()
+    lfoGain.gain.value = 40
+    lfo.connect(lfoGain)
+    lfoGain.connect(square.frequency)
+    const band = this.filter('bandpass', 900, 2)
+    square.connect(band)
+    band.connect(this.envelope(0.14, 0.1, 1.4, 0.6))
+    square.start()
+    lfo.start()
+    square.stop(this.now + 2.2)
+    lfo.stop(this.now + 2.2)
+    this.burst(this.filter('bandpass', 1300, 4), 0.2, 0.1, 1.4, 0.6)
+  }
+
+  radioClick() {
+    this.burst(this.filter('highpass', 2000), 0.25, 0.005, 0.03, 0.05)
+  }
+
+  radioStatic(seconds: number) {
+    this.burst(this.filter('bandpass', 2800, 0.8), 0.09, 0.05, seconds, 0.3)
+  }
+
+  impactWrench() {
+    for (let i = 0; i < 3; i++) {
+      const at = this.now + i * 0.32
+      const osc = this.ctx.createOscillator()
+      osc.type = 'square'
+      osc.frequency.setValueAtTime(170, at)
+      const lfo = this.ctx.createOscillator()
+      lfo.type = 'square'
+      lfo.frequency.value = 45
+      const depth = this.ctx.createGain()
+      depth.gain.value = 0.5
+      const amp = this.ctx.createGain()
+      amp.gain.value = 0.5
+      lfo.connect(depth)
+      depth.connect(amp.gain)
+      osc.connect(amp)
+      amp.connect(this.envelope(0.06, 0.01, 0.16, 0.06, at))
+      osc.start(at)
+      lfo.start(at)
+      osc.stop(at + 0.3)
+      lfo.stop(at + 0.3)
+    }
+  }
+
+  overheatAlarm(seconds: number) {
+    for (let t = 0; t < seconds; t += 0.5) {
+      this.tone('square', 988, 0.18, 0.05, this.now + t)
+      this.tone('square', 740, 0.18, 0.05, this.now + t + 0.25)
+    }
+  }
+
+  crash() {
+    const low = this.filter('lowpass', 5000)
+    low.frequency.setValueAtTime(5000, this.now)
+    low.frequency.exponentialRampToValueAtTime(150, this.now + 1.8)
+    this.burst(low, 0.9, 0.005, 0.15, 1.8)
+    const thump = this.ctx.createOscillator()
+    thump.frequency.setValueAtTime(90, this.now)
+    thump.frequency.exponentialRampToValueAtTime(30, this.now + 0.6)
+    thump.connect(this.envelope(0.8, 0.005, 0.1, 0.7))
+    thump.start()
+    thump.stop(this.now + 0.9)
+  }
+
+  shutter() {
+    this.burst(this.filter('highpass', 3000), 0.35, 0.002, 0.02, 0.04)
+    window.setTimeout(() => this.burst(this.filter('highpass', 2500), 0.25, 0.002, 0.02, 0.06), 90)
+  }
+
+  crowd() {
+    return this.noiseLoop(this.filter('bandpass', 700, 0.6), 0.06, 2)
+  }
+
+  wind() {
+    return this.noiseLoop(this.filter('lowpass', 380), 0.12, 1.5)
+  }
+
+  rain() {
+    return this.noiseLoop(this.filter('highpass', 1600), 0.05, 1)
+  }
+
+  // --- мотор: один цикл, тон и громкость меняются по ходу сцен ---
+
+  engineStart() {
+    if (this.engine) return
+    const gain = this.ctx.createGain()
+    gain.gain.value = 0.0001
+    const filter = this.filter('lowpass', 900)
+    const osc = [0, 7].map((detune) => {
+      const node = this.ctx.createOscillator()
+      node.type = 'sawtooth'
+      node.frequency.value = 70
+      node.detune.value = detune
+      node.connect(filter)
+      node.start()
+      return node
+    })
+    filter.connect(gain)
+    gain.connect(this.master)
+    this.engine = { osc, gain, filter }
+  }
+
+  /** rpm 0..1, level — громкость */
+  engineSet(rpm: number, level: number, ramp = 0.3) {
+    if (!this.engine) this.engineStart()
+    const { osc, gain, filter } = this.engine!
+    const frequency = 60 + rpm * 260
+    osc.forEach((node) => node.frequency.setTargetAtTime(frequency, this.now, ramp))
+    filter.frequency.setTargetAtTime(600 + rpm * 2400, this.now, ramp)
+    gain.gain.setTargetAtTime(Math.max(0.0001, level), this.now, ramp)
+  }
+
+  engineStop(fast = false) {
+    if (!this.engine) return
+    const { osc, gain } = this.engine
+    gain.gain.cancelScheduledValues(this.now)
+    gain.gain.setTargetAtTime(0.0001, this.now, fast ? 0.01 : 0.4)
+    osc.forEach((node) => node.stop(this.now + (fast ? 0.1 : 2)))
+    this.engine = null
+  }
+
+  // --- музыка: тихий гул и «сердцебиение», напряжение растёт ---
+
+  musicStart() {
+    if (this.musicTimer !== null) return
+    const bus = this.ctx.createGain()
+    bus.gain.setValueAtTime(0.0001, this.now)
+    bus.gain.exponentialRampToValueAtTime(0.5, this.now + 4)
+    bus.connect(this.master)
+    this.musicGain = bus
+
+    const drone = [55, 82.4, 110.6].map((frequency) => {
+      const osc = this.ctx.createOscillator()
+      osc.type = 'triangle'
+      osc.frequency.value = frequency
+      const gain = this.ctx.createGain()
+      gain.gain.value = 0.05
+      osc.connect(gain)
+      gain.connect(bus)
+      osc.start()
+      return osc
+    })
+
+    // A минор с полутоном сверху — тревожно, но тихо
+    const notes = [220, 261.6, 329.6, 311.1, 220, 261.6, 349.2, 329.6]
+    let step = 0
+    let next = this.now + 0.2
+    const beat = 0.75
+
+    const schedule = () => {
+      while (next < this.now + 0.4) {
+        // удар «сердца»: два глухих толчка
+        if (step % 2 === 0) {
+          for (const offset of [0, 0.18]) {
+            const kick = this.ctx.createOscillator()
+            kick.frequency.setValueAtTime(110, next + offset)
+            kick.frequency.exponentialRampToValueAtTime(45, next + offset + 0.15)
+            const gain = this.ctx.createGain()
+            gain.gain.setValueAtTime(0.0001, next + offset)
+            gain.gain.exponentialRampToValueAtTime(offset ? 0.12 : 0.2, next + offset + 0.01)
+            gain.gain.exponentialRampToValueAtTime(0.0001, next + offset + 0.22)
+            kick.connect(gain)
+            gain.connect(bus)
+            kick.start(next + offset)
+            kick.stop(next + offset + 0.25)
+          }
+        }
+        if (step % 4 === 1) {
+          const note = this.ctx.createOscillator()
+          note.type = 'triangle'
+          note.frequency.value = notes[(step >> 2) % notes.length]
+          const gain = this.ctx.createGain()
+          gain.gain.setValueAtTime(0.0001, next)
+          gain.gain.exponentialRampToValueAtTime(0.05, next + 0.05)
+          gain.gain.exponentialRampToValueAtTime(0.0001, next + 1.6)
+          note.connect(gain)
+          gain.connect(bus)
+          note.start(next)
+          note.stop(next + 1.7)
+        }
+        step++
+        next += beat
+      }
+    }
+    schedule()
+    this.musicTimer = window.setInterval(schedule, 100)
+
+    const loop: Loop = {
+      stop: () => {
+        drone.forEach((osc) => osc.stop(this.now + 0.05))
+      },
+    }
+    this.loops.add(loop)
+  }
+
+  /** Обрыв музыки — в момент удара всё стихает */
+  musicStop(fade = 0.02) {
+    if (this.musicTimer !== null) window.clearInterval(this.musicTimer)
+    this.musicTimer = null
+    if (this.musicGain) {
+      this.musicGain.gain.cancelScheduledValues(this.now)
+      this.musicGain.gain.setTargetAtTime(0.0001, this.now, fade)
+    }
+  }
+
+  /** Полная тишина: глушим всё, что играет */
+  silence() {
+    this.musicStop()
+    this.engineStop(true)
+    this.loops.forEach((loop) => loop.stop())
+    this.loops.clear()
+  }
+}
