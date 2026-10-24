@@ -1,3 +1,4 @@
+import { useLocation } from 'react-router-dom'
 import { ButtonLink } from '../components/Button.tsx'
 import { PageShell } from '../components/PageShell.tsx'
 import { useMusic } from '../game/useMusic.ts'
@@ -5,7 +6,9 @@ import { routes } from '../routes.ts'
 import './HomePage.css'
 
 export function HomePage() {
-  useMusic('menu')
+  // после ошибочного обвинения игрока выбрасывает сюда, и доигрывает грустная тема
+  const afterWrong = (useLocation().state as { afterWrong?: boolean } | null)?.afterWrong
+  useMusic(afterWrong ? 'sad' : 'menu')
   return (
     <PageShell
       withCar

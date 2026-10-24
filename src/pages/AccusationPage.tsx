@@ -7,7 +7,7 @@ import { allQuestioned } from '../game/dialogues.ts'
 import { loadProgress } from '../game/progress.ts'
 import { routes } from '../routes.ts'
 
-/** Финал: катсцена обвинения. Ошибка возвращает к подозреваемым, верный ответ — на главную */
+/** Финал: катсцена обвинения. После неё — на главную; после ошибки там доигрывает грустная тема */
 export function AccusationPage() {
   const { id = '' } = useParams()
   const { user } = useAuth()
@@ -23,7 +23,7 @@ export function AccusationPage() {
       scenes={scenes}
       title="Обвинение"
       playerName={user?.nickname ?? 'детектив'}
-      onFinish={() => (id === CULPRIT ? navigate(routes.home) : navigate(routes.suspects, { state: { afterWrong: true } }))}
+      onFinish={() => navigate(routes.home, id === CULPRIT ? undefined : { state: { afterWrong: true } })}
     />
   )
 }
