@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '../components/Button.tsx'
 import { GameHeader } from '../components/GameHeader.tsx'
 import { PageShell } from '../components/PageShell.tsx'
+import { useAuth } from '../auth/useAuth.ts'
+import { dialogues, topicKey } from '../game/dialogues.ts'
 import { PORTRAIT_SIZE, suspectPortraits } from '../game/portraits.ts'
+import { loadProgress } from '../game/progress.ts'
 import { suspects } from '../game/story.ts'
 import { routes } from '../routes.ts'
 import './SuspectsPage.css'
@@ -12,6 +15,10 @@ export function SuspectsPage() {
   const navigate = useNavigate()
   const [index, setIndex] = useState(0)
   const suspect = suspects[index]
+  const { user } = useAuth()
+  const [asked] = useState(() => (user ? loadProgress(user.id).asked : []))
+  const topics = dialogues[suspect.id] ?? []
+  const askedCount = topics.filter((topic) => asked.includes(topicKey(suspect.id, topic.id))).length
   const step = (delta: number) => setIndex((current) => (current + delta + suspects.length) % suspects.length)
 
   useEffect(() => {
@@ -50,6 +57,9 @@ export function SuspectsPage() {
               <p className="suspects__role">{suspect.role}</p>
               <h2 className="suspects__name">{suspect.name}</h2>
               <p className="suspects__summary">{suspect.summary}</p>
+              <p className="suspects__asked">
+                {askedCount ? `Вопросов задано: ${askedCount}/${topics.length}` : 'Ещё не допрошен'}
+              </p>
             </figcaption>
           </figure>
 
@@ -64,7 +74,7 @@ export function SuspectsPage() {
           ))}
         </div>
 
-        <Button onClick={() => navigate(routes.interrogation(suspect.id))}>Выбрать подозреваемого</Button>
+        <Button onClick={() => navigate(routes.interrogation(suspect.id))}>Допросить</Button>
         <p className="suspects__hint">← → — листать</p>
       </div>
     </PageShell>

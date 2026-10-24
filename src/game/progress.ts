@@ -7,9 +7,11 @@ export interface Progress {
   introSeen: boolean
   /** id осмотренных улик во всех локациях */
   examined: string[]
+  /** Заданные на допросах вопросы, ключи вида `suspectId:topicId` */
+  asked: string[]
 }
 
-const empty: Progress = { introSeen: false, examined: [] }
+const empty: Progress = { introSeen: false, examined: [], asked: [] }
 const key = (userId: string) => `last-lap:progress:${userId}`
 
 export function loadProgress(userId: string): Progress {

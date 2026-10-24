@@ -85,6 +85,12 @@
   color: var(--color-text-muted);
 }
 
+.suspects__asked {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--color-text-dim);
+}
+
 .suspects__dots {
   display: flex;
   gap: 8px;

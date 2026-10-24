@@ -1,0 +1,226 @@
+.talk {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr) 300px;
+  align-items: start;
+  gap: 24px;
+  width: min(100%, 1180px);
+}
+
+.talk__suspect {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.talk__suspect .suspects__role {
+  margin: 0;
+}
+
+.talk__name {
+  margin: 0;
+  font-family: var(--font-pixel);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.talk__dialogue {
+  display: grid;
+  gap: 16px;
+}
+
+.talk__log {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-height: 260px;
+  padding: 22px;
+  background: var(--color-surface);
+  border: 2px solid var(--color-surface-border);
+}
+
+.talk__log[data-waiting='true'] {
+  cursor: pointer;
+}
+
+.talk__line {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: var(--color-text);
+}
+
+.talk__line p {
+  margin: 0;
+}
+
+.talk__avatar,
+.talk__portrait {
+  image-rendering: pixelated;
+}
+
+.talk__avatar {
+  flex: none;
+  background: var(--color-input);
+  border: 1px solid var(--color-surface-border);
+}
+
+.talk__line b {
+  display: block;
+  margin-bottom: 4px;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-warning);
+}
+
+.talk__line--detective {
+  color: var(--color-text-muted);
+}
+
+.talk__line--detective b {
+  color: var(--color-accent-soft);
+}
+
+.talk__more {
+  position: absolute;
+  right: 16px;
+  bottom: 10px;
+  font-size: 12px;
+  color: var(--color-accent-soft);
+  animation: talk-blink 0.8s steps(2) infinite;
+}
+
+.talk__hint {
+  margin: 0;
+  font-size: 13px;
+  text-align: center;
+  color: var(--color-text-dim);
+}
+
+.talk__questions {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.talk__question {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.talk__question span {
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  line-height: 1.9;
+  color: var(--color-warning);
+}
+
+.talk__question:hover,
+.talk__question:focus-visible {
+  border-color: var(--color-accent-soft);
+}
+
+.talk__question[data-asked='true'] {
+  color: var(--color-text-dim);
+}
+
+.talk__question[data-asked='true'] span {
+  color: var(--color-accent);
+}
+
+.talk__notebook {
+  padding: 22px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-surface-border);
+}
+
+.talk__notebook h2 {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0 12px;
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.talk__notebook h2 span {
+  color: var(--color-accent-soft);
+}
+
+.talk__notebook ul {
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+}
+
+.talk__notebook li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-surface-border);
+  font-size: 14px;
+}
+
+.talk__placeholder {
+  margin: 0 0 18px;
+  color: var(--color-text-dim);
+}
+
+.talk__log .talk__placeholder {
+  margin: 0;
+}
+
+@keyframes talk-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (max-width: 1080px) {
+  .talk {
+    grid-template-columns: 200px minmax(0, 1fr);
+  }
+
+  .talk__notebook {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 720px) {
+  .talk {
+    grid-template-columns: 1fr;
+  }
+
+  .talk__suspect .suspects__portrait {
+    height: 180px;
+  }
+
+  .talk__log {
+    min-height: 200px;
+    padding: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .talk__more {
+    animation: none;
+  }
+}
+
+.talk__notebook .btn {
+  padding-inline: 12px;
+  font-size: 10px;
+}
