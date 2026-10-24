@@ -46,7 +46,8 @@ export function LoginPage() {
   }
 
   // уже вошли (или только что вошли) — ведём туда, куда шёл игрок, или продолжаем игру
-  if (user) return <Navigate to={(location.state as FromState | null)?.from ?? routes.play} replace />
+  // гостю вход и регистрация открыты: прогресс перейдёт в аккаунт
+  if (user && !user.guest) return <Navigate to={(location.state as FromState | null)?.from ?? routes.play} replace />
 
   return (
     <PageShell fadedTrack headerSlot={<BackLink />}>

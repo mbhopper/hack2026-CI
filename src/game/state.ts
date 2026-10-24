@@ -70,6 +70,15 @@ export function saveState(userId: string, state: GameState) {
   }
 }
 
+/** Есть ли у игрока сохранённое дело */
+export function hasState(userId: string) {
+  try {
+    return localStorage.getItem(key(userId)) !== null || localStorage.getItem(legacyKey(userId)) !== null
+  } catch {
+    return false
+  }
+}
+
 /** Стереть прогресс: гость ушёл, и вернуться к нему уже нельзя */
 export function forgetState(userId: string) {
   try {

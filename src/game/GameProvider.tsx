@@ -1,7 +1,16 @@
 import { useEffect, useMemo, useReducer, type ReactNode } from 'react'
 import { useAuth } from '../auth/useAuth.ts'
 import { GameContext } from './GameContext.ts'
-import { initialState, loadState, reducer, saveState, type GameAction, type GameState } from './state.ts'
+import {
+  forgetState,
+  hasState,
+  initialState,
+  loadState,
+  reducer,
+  saveState,
+  type GameAction,
+  type GameState,
+} from './state.ts'
 
 /** Состояние вместе с тем, чьё оно: так не сохраним чужой или пустой прогресс */
 interface Owned {
@@ -13,6 +22,11 @@ type OwnedAction = GameAction | { type: 'switch'; owner: string | null }
 
 function ownedReducer(current: Owned, action: OwnedAction): Owned {
   if (action.type === 'switch') {
+    // гость завёл аккаунт или вошёл в пустой: забираем его расследование с собой
+    if (current.owner?.startsWith('guest-') && action.owner && !hasState(action.owner)) {
+      forgetState(current.owner)
+      return { owner: action.owner, game: current.game }
+    }
     return { owner: action.owner, game: action.owner ? loadState(action.owner) : initialState }
   }
   return { ...current, game: reducer(current.game, action) }

@@ -42,6 +42,11 @@ export function HomePage() {
                   {user.guest ? 'Завершить игру' : 'Выйти'}
                 </Button>
               </div>
+              {user.guest && (
+                <p className="home__guest">
+                  <Link to={routes.register}>Сохранить прогресс в аккаунт</Link>
+                </p>
+              )}
               <div className="home__settings">
                 <DifficultyPicker />
               </div>
