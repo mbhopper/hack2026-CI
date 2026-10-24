@@ -10,9 +10,14 @@ export function validateNickname(value: string): string | undefined {
 
 export function validatePassword(value: string): string | undefined {
   if (!value) return 'Введите пароль'
-  if (!value.trim()) return 'Пароль не может состоять из одних пробелов'
   if (value.length < PASSWORD_MIN_LENGTH) return `Минимум ${PASSWORD_MIN_LENGTH} символов`
   return undefined
+}
+
+/** Правила для нового пароля строже, чем при входе: старые аккаунты должны пускать */
+export function validateNewPassword(value: string): string | undefined {
+  if (value && !value.trim()) return 'Пароль не может состоять из одних пробелов'
+  return validatePassword(value)
 }
 
 export function validatePasswordConfirm(password: string, confirm: string): string | undefined {

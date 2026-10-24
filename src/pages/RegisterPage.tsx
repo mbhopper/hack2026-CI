@@ -8,7 +8,7 @@ import { PageShell } from '../components/PageShell.tsx'
 import { useAuth } from '../auth/useAuth.ts'
 import type { FromState } from '../auth/RequireAuth.tsx'
 import { routes } from '../routes.ts'
-import { validateNickname, validatePassword, validatePasswordConfirm } from '../lib/validation.ts'
+import { validateNewPassword, validateNickname, validatePasswordConfirm } from '../lib/validation.ts'
 import './AuthForm.css'
 
 interface Errors {
@@ -31,7 +31,7 @@ export function RegisterPage() {
     event.preventDefault()
     const nextErrors: Errors = {
       nickname: validateNickname(nickname),
-      password: validatePassword(password),
+      password: validateNewPassword(password),
       confirm: validatePasswordConfirm(password, confirm),
     }
     setErrors(nextErrors)
