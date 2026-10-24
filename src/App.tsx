@@ -3,6 +3,9 @@ import { HomePage } from './pages/HomePage.tsx'
 import { LoginPage } from './pages/LoginPage.tsx'
 import { RegisterPage } from './pages/RegisterPage.tsx'
 import { IntroPage } from './pages/IntroPage.tsx'
+import { TrackPage } from './pages/TrackPage.tsx'
+import { SuspectsPage } from './pages/SuspectsPage.tsx'
+import { InterrogationPage } from './pages/InterrogationPage.tsx'
 import { RequireAuth } from './auth/RequireAuth.tsx'
 import { routes } from './routes.ts'
 
@@ -17,6 +20,30 @@ export default function App() {
         element={
           <RequireAuth>
             <IntroPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path={routes.track}
+        element={
+          <RequireAuth>
+            <TrackPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path={routes.suspects}
+        element={
+          <RequireAuth>
+            <SuspectsPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path={routes.interrogation(':id')}
+        element={
+          <RequireAuth>
+            <InterrogationPage />
           </RequireAuth>
         }
       />
