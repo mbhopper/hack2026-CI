@@ -6,19 +6,23 @@
  */
 import type { Mood } from './portraits.ts'
 
-export type Line = { by: 'detective'; text: string; sharp: boolean } | { by: 'suspect'; text: string; mood: Mood }
+/** Реплика; M — эмоции портрета того, кого спрашивают */
+export type Line<M extends string = Mood> =
+  | { by: 'detective'; text: string; sharp: boolean }
+  | { by: 'suspect'; text: string; mood: M }
 
-export interface Topic {
+export interface Topic<M extends string = Mood> {
   id: string
   question: string
-  lines: Line[]
+  lines: Line<M>[]
   /** Вопрос появится, только когда уже задан этот */
   requires?: string
   /** Что детектив записывает в блокнот после ответа */
   fact?: string
 }
 
-const ask = (text: string, sharp = false): Line => ({ by: 'detective', text, sharp })
+// у реплики детектива эмоции нет, поэтому она подходит к любому собеседнику
+const ask = (text: string, sharp = false): Line<never> => ({ by: 'detective', text, sharp })
 const say = (mood: Mood, text: string): Line => ({ by: 'suspect', text, mood })
 
 export const dialogues: Record<string, Topic[]> = {
@@ -160,5 +164,45 @@ export const dialogues: Record<string, Topic[]> = {
   ],
 }
 
+export type BartenderMood = 'calm' | 'recall'
+
+const recall = (text: string): Line<BartenderMood> => ({ by: 'suspect', text, mood: 'recall' })
+const calm = (text: string): Line<BartenderMood> => ({ by: 'suspect', text, mood: 'calm' })
+
+/** Бармен в VIP-ложе: свидетель, не подозреваемый */
+export const bartenderTopics: Topic<BartenderMood>[] = [
+  {
+    id: 'guests',
+    question: 'Кто был в ложе?',
+    lines: [
+      ask('Кто был в ложе во время гонки?'),
+      recall('Пятеро гостей. Директор автодрома весь вечер провисел на телефоне, гонку, по-моему, так и не увидел.'),
+      recall('Журналистка снимала каждый круг. Её фото с финиша потом показывали везде.'),
+      recall('Представителю шинного поставщика шампанское было интереснее гонки. А ветеран-пилот комментировал каждый поворот.'),
+      recall('Ну и спонсор, в центральном кресле.'),
+      calm('Каждый был занят своим. Ничего особенного я не заметил.'),
+    ],
+    fact: 'В ложе было пятеро гостей, спонсор сидел в центральном кресле.',
+  },
+  {
+    id: 'sponsor',
+    question: 'А спонсор?',
+    requires: 'guests',
+    lines: [
+      ask('А спонсор? Расскажите о нём подробнее.', true),
+      recall('До старта сидел вон на том диванчике, читал какой-то листок. К шампанскому даже не притронулся.'),
+      recall('Потом пересел в кресло. А незадолго до пит-стопа седьмого вскочил и вышел. Быстро, не оглядываясь.'),
+      calm('Листок так и остался на столике. Я со столов гостей ничего не трогаю.'),
+    ],
+    fact: 'Спонсор в спешке ушёл из ложи незадолго до пит-стопа №7 и оставил листок на столике.',
+  },
+]
+
 /** Ключ заданного вопроса в прогрессе: вопросы разных подозреваемых не путаются */
 export const topicKey = (suspectId: string, topicId: string) => `${suspectId}:${topicId}`
+
+/** Все вопросы всем подозреваемым заданы — можно называть убийцу */
+export const allQuestioned = (asked: string[]) =>
+  Object.entries(dialogues).every(([suspectId, topics]) =>
+    topics.every((topic) => asked.includes(topicKey(suspectId, topic.id))),
+  )

@@ -16,7 +16,10 @@ interface PageShellProps {
 export function PageShell({ children, headerSlot, footerSlot, fadedTrack, withCar }: PageShellProps) {
   return (
     <div className="shell">
-      <TrackBackdrop faded={fadedTrack} withCar={withCar} />
+      {/* трасса только за шапкой и контентом: шахматка и подвал её не перекрывают */}
+      <div className="shell__backdrop">
+        <TrackBackdrop faded={fadedTrack} withCar={withCar} />
+      </div>
 
       <header className="shell__header">
         <Logo />

@@ -74,20 +74,33 @@
   color: var(--color-text-dim);
 }
 
+/* на телефоне карточки в столбик: превью слева, название справа */
 @media (max-width: 640px) {
   .places__row {
-    gap: 8px;
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .places__card {
-    padding: 6px 6px 10px;
+    grid-template-columns: minmax(0, 46%) 1fr;
+    align-items: center;
+    column-gap: 14px;
+    row-gap: 4px;
+    padding: 8px;
+    text-align: left;
+  }
+
+  .places__preview {
+    grid-row: 1 / 3;
   }
 
   .places__name {
-    font-size: 9px;
+    align-self: end;
+    font-size: 11px;
   }
 
   .places__count {
-    font-size: 11px;
+    align-self: start;
+    font-size: 12px;
   }
 }

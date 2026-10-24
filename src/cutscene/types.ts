@@ -3,7 +3,7 @@ import type { GameAudio } from '../game/audio.ts'
 /** Что React рисует поверх canvas в текущий момент */
 export interface Overlay {
   /** Крупная надпись по центру: дисклеймер, название, титры */
-  caption?: { text: string; size: 'xl' | 'md' }
+  caption?: { text: string; size: 'xl' | 'md' | 'sm' }
   /** Реплика по рации */
   subtitle?: { speaker?: string; text: string }
   /** Подпись к звуку для тех, кто смотрит без звука */
@@ -14,6 +14,8 @@ export interface Overlay {
   hud?: { speed: number; heat: number }
   /** Подпись под фотографией с финиша */
   photo?: string
+  /** Окно диалога с портретом; side — с какой стороны портрет */
+  dialogue?: { speaker: string; text: string; portrait: string; side: 'left' | 'right' }
 }
 
 /** Общие звуковые циклы, которые живут дольше одной сцены */
@@ -21,6 +23,8 @@ export interface SharedLoops {
   crowd?: { stop(): void }
   wind?: { stop(): void }
   rain?: { stop(): void }
+  /** Гул лампы в комнате допросов */
+  room?: { stop(): void }
 }
 
 export interface DrawEnv {
