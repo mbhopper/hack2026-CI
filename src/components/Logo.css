@@ -1,0 +1,14 @@
+.logo {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 14px;
+  border: 1px dashed var(--color-surface-border);
+  border-radius: var(--radius);
+}
+
+.logo__image {
+  display: block;
+  width: 152px;
+  height: auto;
+  opacity: 0.9;
+}

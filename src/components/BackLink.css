@@ -1,0 +1,10 @@
+.back-link {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--color-accent-soft);
+  text-decoration: none;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
