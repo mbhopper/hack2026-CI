@@ -3,7 +3,8 @@ import { HomePage } from './pages/HomePage.tsx'
 import { LoginPage } from './pages/LoginPage.tsx'
 import { RegisterPage } from './pages/RegisterPage.tsx'
 import { IntroPage } from './pages/IntroPage.tsx'
-import { TrackPage } from './pages/TrackPage.tsx'
+import { LocationsPage } from './pages/LocationsPage.tsx'
+import { LocationPage } from './pages/LocationPage.tsx'
 import { SuspectsPage } from './pages/SuspectsPage.tsx'
 import { InterrogationPage } from './pages/InterrogationPage.tsx'
 import { RequireAuth } from './auth/RequireAuth.tsx'
@@ -24,13 +25,22 @@ export default function App() {
         }
       />
       <Route
-        path={routes.track}
+        path={routes.locations}
         element={
           <RequireAuth>
-            <TrackPage />
+            <LocationsPage />
           </RequireAuth>
         }
       />
+      <Route
+        path={routes.location(':id')}
+        element={
+          <RequireAuth>
+            <LocationPage />
+          </RequireAuth>
+        }
+      />
+      <Route path="/track" element={<Navigate to={routes.location('crash-site')} replace />} />
       <Route
         path={routes.suspects}
         element={

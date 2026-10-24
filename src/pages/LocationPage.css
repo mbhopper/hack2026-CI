@@ -28,6 +28,7 @@
   width: 100%;
   height: 100%;
   image-rendering: pixelated;
+  cursor: pointer;
 }
 
 .site__spot {
@@ -67,22 +68,31 @@
   opacity: 0.8;
 }
 
-.site__prompt {
+.site__inspect {
   position: absolute;
   left: 50%;
   bottom: 10px;
-  margin: 0;
+  max-width: calc(100% - 20px);
   padding: 8px 14px;
   transform: translateX(-50%);
+  font: inherit;
   font-size: 14px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: var(--color-text);
-  background: rgba(11, 15, 14, 0.85);
+  background: rgba(11, 15, 14, 0.9);
   border: 1px solid var(--color-warning);
-  pointer-events: none;
+  cursor: pointer;
+  animation: site-pop 0.2s steps(2) both;
 }
 
-.site__prompt kbd {
+.site__inspect:hover,
+.site__inspect:focus-visible {
+  background: #1a1608;
+}
+
+.site__inspect kbd {
   margin-right: 6px;
   padding: 1px 6px;
   font-family: var(--font-pixel);
@@ -158,6 +168,13 @@
   color: var(--color-text-dim);
 }
 
+@keyframes site-pop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+}
+
 @keyframes track-pulse {
   50% {
     transform: scale(0.85);
@@ -172,7 +189,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .site__marker {
+  .site__marker,
+  .site__inspect {
     animation: none;
   }
 }

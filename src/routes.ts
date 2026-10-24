@@ -4,8 +4,10 @@ export const routes = {
   register: '/register',
   /** Катсцена, с которой начинается игра после входа */
   intro: '/intro',
-  /** Осмотр места аварии через два дня */
-  track: '/track',
+  /** Меню локаций после катсцены */
+  locations: '/locations',
+  /** Локация: место аварии, бокс №7 или VIP-ложа */
+  location: (id: string) => `/locations/${id}`,
   /** Карусель подозреваемых */
   suspects: '/suspects',
   /** Допрос выбранного подозреваемого */

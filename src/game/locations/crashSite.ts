@@ -1,26 +1,12 @@
 import background from '../../assets/locations/crash-site.png'
-import type { Direction } from '../characters.ts'
+import { clues } from '../story.ts'
+import type { Location } from './location.ts'
 
-/** Прямоугольник в пикселях сцены 320×180 */
-export interface Rect {
-  x: number
-  y: number
-  w: number
-  h: number
-}
-
-export interface Location {
-  background: string
-  /** Где могут стоять ноги детектива; объединение прямоугольников */
-  walkable: Rect[]
-  start: { x: number; y: number; dir: Direction }
-}
-
-/**
- * Место аварии через два дня: статичный экран. Болид №7 врезался в отбойник
- * на выходе из правого поворота, вокруг сигнальная лента с проходом слева.
- */
+/** Место аварии через два дня: болид №7 у отбойника на выходе из правого поворота */
 export const crashSite: Location = {
+  id: 'crash-site',
+  title: 'Место аварии',
+  lead: 'Обломки болида №7 так и не убрали. Пройдите к машине через проход в ленте и осмотрите всё вокруг.',
   background,
   walkable: [
     { x: 6, y: 62, w: 196, h: 46 }, // прямая перед поворотом
@@ -29,15 +15,6 @@ export const crashSite: Location = {
     { x: 196, y: 124, w: 94, h: 50 }, // поворот и зона вылета ниже ленты
   ],
   start: { x: 172, y: 84, dir: 'right' },
-}
-
-export function isWalkable(location: Location, x: number, y: number): boolean {
-  return location.walkable.some((r) => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h)
-}
-
-/** Расстояние от точки до прямоугольника (0, если точка внутри) */
-export function distanceToRect(r: Rect, x: number, y: number): number {
-  const dx = Math.max(r.x - x, 0, x - (r.x + r.w))
-  const dy = Math.max(r.y - y, 0, y - (r.y + r.h))
-  return Math.hypot(dx, dy)
+  clues,
+  rain: true,
 }
