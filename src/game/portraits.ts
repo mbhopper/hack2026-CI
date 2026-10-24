@@ -1,3 +1,5 @@
+import bartenderCalm from '../assets/portraits/bartender-calm.png'
+import bartenderRecall from '../assets/portraits/bartender-recall.png'
 import detectiveCalm from '../assets/portraits/detective-calm.png'
 import detectiveSharp from '../assets/portraits/detective-sharp.png'
 import mechanicBroken from '../assets/portraits/mechanic-broken.png'
@@ -28,6 +30,9 @@ export const suspectPortraits: Record<string, Record<Mood, string>> = {
 }
 
 export const detectivePortraits = { calm: detectiveCalm, sharp: detectiveSharp }
+
+/** Бармен в VIP-ложе: спокоен и вспоминает */
+export const bartenderPortraits = { calm: bartenderCalm, recall: bartenderRecall }
 
 /** Пилот №1, погибший: для фото и флешбэков */
 export const victimPortraits = { calm: pilot1Calm, happy: pilot1Happy }

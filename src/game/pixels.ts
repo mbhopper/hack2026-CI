@@ -100,3 +100,42 @@ export function drawNumber(ctx: CanvasRenderingContext2D, text: string, x: numbe
     })
   })
 }
+
+/** Буквы 5×5 для надписей на документах и печати */
+const LETTERS: Record<string, string[]> = {
+  А: ['.###.', '#...#', '#####', '#...#', '#...#'],
+  Д: ['.###.', '.#.#.', '.#.#.', '#####', '#...#'],
+  Е: ['#####', '#....', '####.', '#....', '#####'],
+  К: ['#...#', '#..#.', '###..', '#..#.', '#...#'],
+  Л: ['.####', '.#..#', '.#..#', '.#..#', '##..#'],
+  О: ['.###.', '#...#', '#...#', '#...#', '.###.'],
+  Р: ['####.', '#...#', '####.', '#....', '#....'],
+  С: ['.####', '#....', '#....', '#....', '.####'],
+  Т: ['#####', '..#..', '..#..', '..#..', '..#..'],
+  Ы: ['#...#', '#...#', '###.#', '#.#.#', '###.#'],
+  '№': ['#..#.', '##.#.', '#.##.', '#..#.', '#..##'],
+}
+
+/** Ширина строки в пикселях до увеличения */
+export function textWidth(text: string): number {
+  return [...text].reduce((sum, char) => sum + (char === ' ' ? 3 : (LETTERS[char] ?? DIGITS[char])?.[0].length ?? 0) + 1, -1)
+}
+
+/** Надпись заглавными буквами пиксельным шрифтом */
+export function drawText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, color: string, size = 1) {
+  ctx.fillStyle = color
+  let cursor = x
+  for (const char of text) {
+    const glyph = LETTERS[char] ?? DIGITS[char]
+    if (!glyph) {
+      cursor += 4 * size
+      continue
+    }
+    glyph.forEach((row, ry) => {
+      for (let rx = 0; rx < row.length; rx++) {
+        if (row[rx] === '#') ctx.fillRect(cursor + rx * size, y + ry * size, size, size)
+      }
+    })
+    cursor += (glyph[0].length + 1) * size
+  }
+}

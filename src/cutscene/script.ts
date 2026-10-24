@@ -6,6 +6,7 @@ import { CAR_H, carSprite, liveries, topCarSprite, wreckSprite, type CarId, type
 import { drawCharacter, IDLE_FRAME, walkFrame, type Direction } from '../game/characters.ts'
 import { art } from '../game/cutsceneArt.ts'
 import { vignette } from '../game/lighting.ts'
+import { music } from '../game/music.ts'
 import { crashSite } from '../game/locations/crashSite.ts'
 import { metal } from '../game/palette.ts'
 import { OUTLINE } from '../game/pixels.ts'
@@ -112,7 +113,10 @@ const scenes: Scene[] = [
     duration: 5,
     draw: ({ ctx }) => fill(ctx, '#000000', 0, 0, W, H),
     overlay: (t) => (t > 0.4 ? { caption: { text: 'Основано на реальных событиях', size: 'md' } } : {}),
-    cues: [{ at: 0.5, run: (audio, loops) => (loops.crowd = audio.crowd()) }],
+    cues: [
+      { at: 0, run: () => music.play('tension', true) },
+      { at: 0.5, run: (audio, loops) => (loops.crowd = audio.crowd()) },
+    ],
   },
   {
     id: 'title',
@@ -246,7 +250,6 @@ const scenes: Scene[] = [
     overlay: (t) => (between(t, 3.5, 5.2) ? { sound: '[гайковёрты]' } : {}),
     cues: [
       { at: 0, run: (audio) => audio.engineSet(0.3, 0.08, 0.6) },
-      { at: 1.2, run: (audio) => audio.musicStart() },
       { at: 2.5, run: (audio) => audio.engineSet(0.08, 0.04, 0.5) },
       { at: 3.6, run: (audio) => audio.impactWrench() },
       { at: 5.2, run: (audio) => audio.impactWrench() },
@@ -335,6 +338,7 @@ const scenes: Scene[] = [
         at: 0.7,
         run: (audio, loops) => {
           audio.silence()
+          music.stop(0.05)
           loops.crowd = undefined
           audio.crash()
         },
@@ -416,6 +420,7 @@ const scenes: Scene[] = [
       fill(ctx, '#000000', 0, 0, W, H)
       ctx.globalAlpha = 1
     },
+    cues: [{ at: 3, run: () => music.play('tension', true) }],
     overlay: (t, playerName) => ({
       ...(t < 3 ? { caption: { text: 'Спустя два дня…', size: 'md' as const } } : {}),
       ...(t > 5 ? { caption: { text: `Детектив ${playerName}, вас ждут на трассе`, size: 'md' as const } } : {}),

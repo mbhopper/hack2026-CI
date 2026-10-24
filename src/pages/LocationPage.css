@@ -182,6 +182,12 @@
   }
 }
 
+@media (hover: none) {
+  .site__inspect kbd {
+    display: none;
+  }
+}
+
 @media (max-width: 860px) {
   .site__panels {
     grid-template-columns: 1fr;
@@ -192,5 +198,60 @@
   .site__marker,
   .site__inspect {
     animation: none;
+  }
+}
+
+.site__talk {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 18px;
+}
+
+.site__witness {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
+
+.site__witness h2 {
+  margin: 0;
+}
+
+.site__witness-portrait {
+  image-rendering: pixelated;
+  background: var(--color-input);
+  border: 1px solid var(--color-surface-border);
+}
+
+.site__closeup {
+  display: block;
+  width: 100%;
+  max-width: 528px;
+  height: auto;
+  margin: 0 0 14px;
+  image-rendering: pixelated;
+  border: 1px solid var(--color-surface-border);
+}
+
+.site__notebook .site__facts li {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 560px) {
+  .site__talk {
+    grid-template-columns: 1fr;
+  }
+
+  .site__witness {
+    grid-template-columns: auto 1fr;
+    justify-items: start;
+    align-items: center;
+  }
+
+  .site__witness-portrait {
+    width: 62px;
+    height: 62px;
   }
 }

@@ -26,4 +26,5 @@ export const garage: Location = {
   start: { x: 166, y: 166, dir: 'up' },
   clues: garageClues,
   rain: false,
+  music: 'garage',
 }

@@ -6,6 +6,7 @@ import { Button } from '../components/Button.tsx'
 import { Field } from '../components/Field.tsx'
 import { PageShell } from '../components/PageShell.tsx'
 import { useAuth } from '../auth/useAuth.ts'
+import { useMusic } from '../game/useMusic.ts'
 import { routes } from '../routes.ts'
 import { validateNickname, validatePassword, validatePasswordConfirm } from '../lib/validation.ts'
 import './AuthForm.css'
@@ -17,6 +18,7 @@ interface Errors {
 }
 
 export function RegisterPage() {
+  useMusic('menu')
   const navigate = useNavigate()
   const { register } = useAuth()
   const [nickname, setNickname] = useState('')

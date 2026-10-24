@@ -1,9 +1,11 @@
 import { ButtonLink } from '../components/Button.tsx'
 import { PageShell } from '../components/PageShell.tsx'
+import { useMusic } from '../game/useMusic.ts'
 import { routes } from '../routes.ts'
 import './HomePage.css'
 
 export function HomePage() {
+  useMusic('menu')
   return (
     <PageShell
       withCar

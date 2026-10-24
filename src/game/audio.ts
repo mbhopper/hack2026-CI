@@ -1,5 +1,5 @@
 /**
- * Все звуки и музыка синтезируются Web Audio, аудиофайлов нет.
+ * Звуки катсцен синтезируются Web Audio, аудиофайлов нет. Фоновая музыка — в music.ts.
  * AudioContext запускается только после жеста пользователя,
  * поэтому `GameAudio.create()` вызываем из обработчика клика.
  */
@@ -12,8 +12,6 @@ export class GameAudio {
   private readonly noise: AudioBuffer
   private loops = new Set<Loop>()
   private engine: { osc: OscillatorNode[]; gain: GainNode; filter: BiquadFilterNode } | null = null
-  private musicTimer: number | null = null
-  private musicGain: GainNode | null = null
 
   private constructor() {
     this.ctx = new AudioContext()
@@ -229,6 +227,59 @@ export class GameAudio {
     window.setTimeout(() => this.burst(this.filter('highpass', 2500), 0.25, 0.002, 0.02, 0.06), 90)
   }
 
+  footstep() {
+    this.burst(this.filter('lowpass', 420), 0.22, 0.004, 0.03, 0.12)
+  }
+
+  door() {
+    const creak = this.ctx.createOscillator()
+    creak.type = 'sawtooth'
+    creak.frequency.setValueAtTime(240, this.now)
+    creak.frequency.linearRampToValueAtTime(170, this.now + 0.9)
+    const band = this.filter('bandpass', 900, 8)
+    creak.connect(band)
+    band.connect(this.envelope(0.05, 0.1, 0.5, 0.3))
+    creak.start()
+    creak.stop(this.now + 1)
+  }
+
+  doorShut() {
+    this.burst(this.filter('lowpass', 260), 0.35, 0.004, 0.04, 0.25)
+    this.tone('sine', 70, 0.2, 0.2)
+  }
+
+  /** Тяжёлый вздох: шум с медленной атакой */
+  sigh() {
+    this.burst(this.filter('bandpass', 750, 0.8), 0.12, 0.35, 0.2, 0.9)
+  }
+
+  /** Низкий глухой удар под надпись «Ты ошибся.» */
+  wrongSting() {
+    this.burst(this.filter('lowpass', 300), 0.3, 0.005, 0.05, 0.6)
+    this.tone('sine', 82, 1.8, 0.35)
+    this.tone('triangle', 77.8, 2.2, 0.1)
+  }
+
+  paperSlap() {
+    this.burst(this.filter('bandpass', 1800, 0.7), 0.4, 0.003, 0.04, 0.18)
+    this.tone('sine', 120, 0.12, 0.25)
+  }
+
+  stamp() {
+    const thump = this.ctx.createOscillator()
+    thump.frequency.setValueAtTime(140, this.now)
+    thump.frequency.exponentialRampToValueAtTime(40, this.now + 0.25)
+    thump.connect(this.envelope(0.7, 0.003, 0.05, 0.3))
+    thump.start()
+    thump.stop(this.now + 0.4)
+    this.burst(this.filter('lowpass', 900), 0.3, 0.003, 0.03, 0.15)
+  }
+
+  /** Гул лампы в комнате допросов */
+  roomTone() {
+    return this.noiseLoop(this.filter('bandpass', 120, 4), 0.05, 1.5)
+  }
+
   crowd() {
     return this.noiseLoop(this.filter('bandpass', 700, 0.6), 0.06, 2)
   }
@@ -281,93 +332,8 @@ export class GameAudio {
     this.engine = null
   }
 
-  // --- музыка: тихий гул и «сердцебиение», напряжение растёт ---
-
-  musicStart() {
-    if (this.musicTimer !== null) return
-    const bus = this.ctx.createGain()
-    bus.gain.setValueAtTime(0.0001, this.now)
-    bus.gain.exponentialRampToValueAtTime(0.5, this.now + 4)
-    bus.connect(this.master)
-    this.musicGain = bus
-
-    const drone = [55, 82.4, 110.6].map((frequency) => {
-      const osc = this.ctx.createOscillator()
-      osc.type = 'triangle'
-      osc.frequency.value = frequency
-      const gain = this.ctx.createGain()
-      gain.gain.value = 0.05
-      osc.connect(gain)
-      gain.connect(bus)
-      osc.start()
-      return osc
-    })
-
-    // ля минор с полутоном сверху
-    const notes = [220, 261.6, 329.6, 311.1, 220, 261.6, 349.2, 329.6]
-    let step = 0
-    let next = this.now + 0.2
-    const beat = 0.75
-
-    const schedule = () => {
-      while (next < this.now + 0.4) {
-        // удар «сердца»: два глухих толчка
-        if (step % 2 === 0) {
-          for (const offset of [0, 0.18]) {
-            const kick = this.ctx.createOscillator()
-            kick.frequency.setValueAtTime(110, next + offset)
-            kick.frequency.exponentialRampToValueAtTime(45, next + offset + 0.15)
-            const gain = this.ctx.createGain()
-            gain.gain.setValueAtTime(0.0001, next + offset)
-            gain.gain.exponentialRampToValueAtTime(offset ? 0.12 : 0.2, next + offset + 0.01)
-            gain.gain.exponentialRampToValueAtTime(0.0001, next + offset + 0.22)
-            kick.connect(gain)
-            gain.connect(bus)
-            kick.start(next + offset)
-            kick.stop(next + offset + 0.25)
-          }
-        }
-        if (step % 4 === 1) {
-          const note = this.ctx.createOscillator()
-          note.type = 'triangle'
-          note.frequency.value = notes[(step >> 2) % notes.length]
-          const gain = this.ctx.createGain()
-          gain.gain.setValueAtTime(0.0001, next)
-          gain.gain.exponentialRampToValueAtTime(0.05, next + 0.05)
-          gain.gain.exponentialRampToValueAtTime(0.0001, next + 1.6)
-          note.connect(gain)
-          gain.connect(bus)
-          note.start(next)
-          note.stop(next + 1.7)
-        }
-        step++
-        next += beat
-      }
-    }
-    schedule()
-    this.musicTimer = window.setInterval(schedule, 100)
-
-    const loop: Loop = {
-      stop: () => {
-        drone.forEach((osc) => osc.stop(this.now + 0.05))
-      },
-    }
-    this.loops.add(loop)
-  }
-
-  /** Обрыв музыки */
-  musicStop(fade = 0.02) {
-    if (this.musicTimer !== null) window.clearInterval(this.musicTimer)
-    this.musicTimer = null
-    if (this.musicGain) {
-      this.musicGain.gain.cancelScheduledValues(this.now)
-      this.musicGain.gain.setTargetAtTime(0.0001, this.now, fade)
-    }
-  }
-
   /** Полная тишина: глушим всё, что играет */
   silence() {
-    this.musicStop()
     this.engineStop(true)
     this.loops.forEach((loop) => loop.stop())
     this.loops.clear()

@@ -8,11 +8,31 @@
   background: var(--color-bg);
 }
 
+.shell__backdrop {
+  position: relative;
+  grid-row: 1 / 3;
+  grid-column: 1;
+  pointer-events: none;
+}
+
 .shell__header,
 .shell__main,
 .shell__footer {
   position: relative;
   z-index: 1;
+  grid-column: 1;
+}
+
+.shell__header {
+  grid-row: 1;
+}
+
+.shell__main {
+  grid-row: 2;
+}
+
+.shell__footer {
+  grid-row: 4;
 }
 
 .shell__header {
@@ -41,6 +61,8 @@
 .shell__chequer {
   position: relative;
   z-index: 1;
+  grid-row: 3;
+  grid-column: 1;
   height: 22px;
   background-image:
     linear-gradient(45deg, var(--color-text) 25%, transparent 25%, transparent 75%, var(--color-text) 75%),
