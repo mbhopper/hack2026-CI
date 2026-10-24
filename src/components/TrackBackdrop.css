@@ -1,0 +1,50 @@
+.track {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.track--faded {
+  opacity: 0.45;
+}
+
+.track__asphalt {
+  fill: none;
+  stroke: var(--color-track);
+  stroke-width: 56;
+}
+
+.track__kerb {
+  fill: none;
+  stroke: var(--color-track-edge);
+  stroke-width: 3;
+  stroke-dasharray: 6 6;
+}
+
+.track__dashes {
+  fill: none;
+  stroke: var(--color-track-line);
+  stroke-width: 2;
+  stroke-dasharray: 18 26;
+}
+
+.track__start {
+  fill: var(--color-text);
+}
+
+.track__flag {
+  fill: var(--color-danger);
+}
+
+.track__car {
+  fill: var(--color-accent);
+}
+
+/* На узких экранах срез овала читается как случайные полосы — убираем */
+@media (max-width: 720px) {
+  .track {
+    display: none;
+  }
+}

@@ -1,0 +1,33 @@
+:root {
+  /* Палитра: ночная трасса, асфальт, зелёный флаг */
+  --color-bg: #0b0f0e;
+  --color-surface: #111815;
+  --color-surface-border: #1f2a25;
+  --color-track: #18211d;
+  --color-track-edge: #22302a;
+  --color-track-line: #34433c;
+  --color-input: #0a0e0d;
+  --color-input-border: #2a3530;
+
+  --color-text: #e8ece9;
+  --color-text-muted: #a9b3ae;
+  --color-text-dim: #6f7a75;
+
+  --color-accent: #3dbf72;
+  --color-accent-dark: #2a8a52;
+  --color-accent-soft: #8fd9ad;
+  --color-danger: #e04848;
+  --color-warning: #e0a92e;
+
+  --font-pixel: 'Press Start 2P', ui-monospace, monospace;
+  --font-body: 'Montserrat', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --page-gutter: 56px;
+  --radius: 2px;
+}
+
+@media (max-width: 720px) {
+  :root {
+    --page-gutter: 16px;
+  }
+}

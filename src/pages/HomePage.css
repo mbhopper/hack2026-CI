@@ -1,0 +1,70 @@
+.home {
+  max-width: 720px;
+  text-align: center;
+}
+
+.home__tagline {
+  margin: 0 0 26px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--color-danger);
+}
+
+.home__title {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 0 34px;
+  font-family: var(--font-pixel);
+  font-size: 68px;
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  /* след от болида: зелёная тень слева, красная справа */
+  text-shadow:
+    -4px 0 0 rgb(61 191 114 / 55%),
+    4px 0 0 rgb(224 72 72 / 35%);
+}
+
+.home__lead {
+  margin: 0 0 34px;
+  font-size: 19px;
+  color: var(--color-text);
+}
+
+.home__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+}
+
+.home__actions .btn {
+  min-width: 200px;
+}
+
+@media (max-width: 860px) {
+  .home__title {
+    font-size: 44px;
+  }
+}
+
+@media (max-width: 560px) {
+  .home__title {
+    font-size: 28px;
+  }
+
+  .home__lead {
+    font-size: 16px;
+  }
+
+  .home__actions {
+    flex-direction: column;
+  }
+
+  .home__actions .btn {
+    width: 100%;
+  }
+}
