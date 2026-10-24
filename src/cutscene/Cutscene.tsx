@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Button } from '../components/Button.tsx'
 import { GameAudio } from '../game/audio.ts'
+import { loadCutsceneArt } from '../game/cutsceneArt.ts'
 import { H, W } from '../game/scenery.ts'
 import { script } from './script.ts'
 import type { Overlay, SharedLoops } from './types.ts'
@@ -41,6 +42,17 @@ export function Cutscene({ playerName, onFinish }: CutsceneProps) {
   const [phase, setPhase] = useState<Phase>('ready')
   const [overlay, setOverlay] = useState<Overlay>({})
   const scale = useIntegerScale()
+  const [artReady, setArtReady] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+    void loadCutsceneArt().then(() => {
+      if (alive) setArtReady(true)
+    })
+    return () => {
+      alive = false
+    }
+  }, [])
 
   const audioRef = useRef<GameAudio | null>(null)
   const loopsRef = useRef<SharedLoops>({})
@@ -181,7 +193,7 @@ export function Cutscene({ playerName, onFinish }: CutsceneProps) {
         {phase === 'ready' ? (
           <div className="cutscene__ready">
             <p className="cutscene__ready-kicker">Последний круг</p>
-            <Button onClick={start} autoFocus>
+            <Button onClick={start} disabled={!artReady} autoFocus>
               Нажмите, чтобы начать
             </Button>
             <p className="cutscene__ready-hint">Включите звук · Esc — пропустить · Пробел — пауза</p>
