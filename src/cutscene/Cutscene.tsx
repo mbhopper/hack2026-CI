@@ -47,7 +47,7 @@ export function Cutscene({ playerName, seen, onFinish }: CutsceneProps) {
   const audioRef = useRef<GameAudio | null>(null)
   const loopsRef = useRef<SharedLoops>({})
   const rafRef = useRef(0)
-  const clock = useRef({ time: 0, last: 0, paused: false, scene: -1, fired: new Set<number>(), overlayKey: '' })
+  const clock = useRef({ time: 0, last: 0, paused: false, scene: -1, fired: new Set<number>(), overlayKey: '', shakeX: 0, shakeY: 0 })
   const finishedRef = useRef(false)
   const reducedMotion = useRef(window.matchMedia('(prefers-reduced-motion: reduce)').matches)
 
@@ -96,12 +96,12 @@ export function Cutscene({ playerName, seen, onFinish }: CutsceneProps) {
         ctx.fillStyle = '#000'
         ctx.fillRect(0, 0, W, H)
         const amplitude = reducedMotion.current ? 0 : (scene.shake?.(where.t) ?? 0)
-        if (amplitude) {
-          ctx.translate(
-            Math.round((Math.random() * 2 - 1) * amplitude),
-            Math.round((Math.random() * 2 - 1) * amplitude),
-          )
+        // на паузе кадр замирает вместе с последним смещением тряски
+        if (!state.paused) {
+          state.shakeX = Math.round((Math.random() * 2 - 1) * amplitude)
+          state.shakeY = Math.round((Math.random() * 2 - 1) * amplitude)
         }
+        if (amplitude) ctx.translate(state.shakeX, state.shakeY)
         scene.draw({ ctx, t: where.t, frame: Math.floor(state.time * 30), reducedMotion: reducedMotion.current })
         ctx.setTransform(1, 0, 0, 1, 0, 0)
         const flash = reducedMotion.current ? 0 : (scene.flash?.(where.t) ?? 0)

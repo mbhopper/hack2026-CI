@@ -1,7 +1,7 @@
 .game-header {
   display: inline-flex;
   align-items: center;
-  gap: 18px;
+  gap: 12px;
 }
 
 .game-header__logout {
@@ -22,7 +22,7 @@
 }
 
 @media (max-width: 480px) {
-  .game-header > span {
+  .game-header__label {
     display: none;
   }
 }

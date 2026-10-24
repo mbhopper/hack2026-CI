@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 import { AuthCard } from '../components/AuthCard.tsx'
 import { BackLink } from '../components/BackLink.tsx'
 import { Button } from '../components/Button.tsx'
 import { Field } from '../components/Field.tsx'
 import { PageShell } from '../components/PageShell.tsx'
 import { useAuth } from '../auth/useAuth.ts'
+import type { FromState } from '../auth/RequireAuth.tsx'
 import { routes } from '../routes.ts'
 import { validateNickname, validatePassword } from '../lib/validation.ts'
 import './AuthForm.css'
@@ -16,8 +17,8 @@ interface Errors {
 }
 
 export function LoginPage() {
-  const navigate = useNavigate()
-  const { login } = useAuth()
+  const location = useLocation()
+  const { user, login } = useAuth()
   const [nickname, setNickname] = useState('')
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState<Errors>({})
@@ -37,13 +38,15 @@ export function LoginPage() {
     setPending(true)
     try {
       await login({ nickname: nickname.trim(), password })
-      navigate(routes.intro, { replace: true })
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'Не удалось войти')
     } finally {
       setPending(false)
     }
   }
+
+  // уже вошли (или только что вошли) — ведём туда, куда шёл игрок, или продолжаем игру
+  if (user) return <Navigate to={(location.state as FromState | null)?.from ?? routes.play} replace />
 
   return (
     <PageShell fadedTrack headerSlot={<BackLink />}>
@@ -54,7 +57,7 @@ export function LoginPage() {
         subtitle="Детектив, трасса ждёт. Предъявите удостоверение."
         footer={
           <>
-            Ещё нет аккаунта? <Link to={routes.register}>Зарегистрироваться</Link>
+            Ещё нет аккаунта? <Link to={routes.register} state={location.state}>Зарегистрироваться</Link>
           </>
         }
       >

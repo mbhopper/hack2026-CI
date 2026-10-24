@@ -1,32 +1,20 @@
-/**
- * Прогресс игрока. Пока бэкенда нет, храним в localStorage по id игрока;
- * потом это станет полем профиля на сервере (задача кейса про сохранения).
- */
+import { routes } from '../routes.ts'
+import type { GameState } from './state.ts'
+import { cluesAt, type LocationId } from './story.ts'
 
-export interface Progress {
-  introSeen: boolean
-  /** id осмотренных улик на трассе */
-  examined: string[]
+/** Все ли улики найдены в этом месте */
+export function locationDone(state: GameState, location: LocationId) {
+  return cluesAt(location).every((clue) => state.found.includes(clue.id))
 }
 
-const empty: Progress = { introSeen: false, examined: [] }
-const key = (userId: string) => `last-lap:progress:${userId}`
-
-export function loadProgress(userId: string): Progress {
-  try {
-    const raw = localStorage.getItem(key(userId))
-    return raw ? { ...empty, ...(JSON.parse(raw) as Partial<Progress>) } : empty
-  } catch {
-    return empty
-  }
+/** Осмотр закончен — можно переходить к подозреваемым */
+export function inspectionDone(state: GameState) {
+  return locationDone(state, 'track')
 }
 
-export function saveProgress(userId: string, patch: Partial<Progress>): Progress {
-  const next = { ...loadProgress(userId), ...patch }
-  try {
-    localStorage.setItem(key(userId), JSON.stringify(next))
-  } catch {
-    // приватный режим или переполнение — игра просто не запомнит прогресс
-  }
-  return next
+/** Куда вернуть игрока, который нажал «Продолжить» */
+export function resumeRoute(state: GameState) {
+  if (!state.introSeen) return routes.intro
+  if (!inspectionDone(state)) return routes.track
+  return routes.suspects
 }

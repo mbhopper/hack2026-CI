@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 import { AuthCard } from '../components/AuthCard.tsx'
 import { BackLink } from '../components/BackLink.tsx'
 import { Button } from '../components/Button.tsx'
 import { Field } from '../components/Field.tsx'
 import { PageShell } from '../components/PageShell.tsx'
 import { useAuth } from '../auth/useAuth.ts'
+import type { FromState } from '../auth/RequireAuth.tsx'
 import { routes } from '../routes.ts'
 import { validateNickname, validatePassword, validatePasswordConfirm } from '../lib/validation.ts'
 import './AuthForm.css'
@@ -17,8 +18,8 @@ interface Errors {
 }
 
 export function RegisterPage() {
-  const navigate = useNavigate()
-  const { register } = useAuth()
+  const location = useLocation()
+  const { user, register } = useAuth()
   const [nickname, setNickname] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -40,13 +41,15 @@ export function RegisterPage() {
     setPending(true)
     try {
       await register({ nickname: nickname.trim(), password })
-      navigate(routes.intro, { replace: true })
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'Не удалось создать аккаунт')
     } finally {
       setPending(false)
     }
   }
+
+  // уже вошли (или только что вошли) — ведём туда, куда шёл игрок, или продолжаем игру
+  if (user) return <Navigate to={(location.state as FromState | null)?.from ?? routes.play} replace />
 
   return (
     <PageShell fadedTrack headerSlot={<BackLink />}>
@@ -58,7 +61,7 @@ export function RegisterPage() {
         subtitle="Заведите удостоверение детектива — без почты и телефона, только никнейм."
         footer={
           <>
-            Уже есть аккаунт? <Link to={routes.login}>Войти</Link>
+            Уже есть аккаунт? <Link to={routes.login} state={location.state}>Войти</Link>
           </>
         }
       >

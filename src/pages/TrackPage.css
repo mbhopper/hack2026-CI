@@ -129,13 +129,6 @@
   color: var(--color-accent-soft);
 }
 
-.site__photo {
-  display: block;
-  max-width: 100%;
-  height: auto !important;
-  margin: 0 0 14px;
-}
-
 .site__placeholder {
   color: var(--color-text-dim);
 }

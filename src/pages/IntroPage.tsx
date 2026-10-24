@@ -1,20 +1,21 @@
 import { useNavigate } from 'react-router-dom'
 import { Cutscene } from '../cutscene/Cutscene.tsx'
 import { useAuth } from '../auth/useAuth.ts'
-import { loadProgress, saveProgress } from '../game/progress.ts'
+import { useGame } from '../game/useGame.ts'
 import { routes } from '../routes.ts'
 
-/** Вступительная катсцена: сюда попадаем сразу после входа */
+/** Вступительная катсцена: с неё начинается новое расследование */
 export function IntroPage() {
   const { user } = useAuth()
+  const { state, dispatch } = useGame()
   const navigate = useNavigate()
 
   return (
     <Cutscene
       playerName={user?.nickname ?? 'детектив'}
-      seen={user ? loadProgress(user.id).introSeen : false}
+      seen={state.introSeen}
       onFinish={() => {
-        if (user) saveProgress(user.id, { introSeen: true })
+        dispatch({ type: 'introSeen' })
         navigate(routes.track)
       }}
     />

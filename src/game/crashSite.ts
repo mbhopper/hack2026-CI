@@ -6,8 +6,7 @@ export const CRASH_SITE_SCROLL = Math.round((VIP_X - 60) / 0.35)
 
 /**
  * Место аварии через два дня: пустые трибуны, обломки болида №7 у отбойника,
- * лента ограждения и доска со сменой бокса. Общая сцена для конца катсцены
- * и для экрана осмотра.
+ * лента ограждения. Общая сцена для конца катсцены и для экрана осмотра.
  */
 export function drawCrashSite(ctx: CanvasRenderingContext2D, time: number, rain = true) {
   drawSideTrack(ctx, {
@@ -31,17 +30,6 @@ export function drawCrashSite(ctx: CanvasRenderingContext2D, time: number, rain 
   for (let x = 222; x < 310; x += 4) {
     const y = TRACK_TOP - 2 + Math.round((x - 222) / 15)
     fill(ctx, (x / 4) % 2 ? '#e8c43a' : '#0b0f0e', x, y, 4, 1)
-  }
-
-  // доска со сменой бокса №7 у въезда на пит-лейн
-  fill(ctx, '#1f2a25', 22, 100, 2, 18)
-  fill(ctx, '#3a2618', 8, 70, 34, 32)
-  fill(ctx, '#5a3b25', 10, 72, 30, 28)
-  fill(ctx, '#e8ece9', 13, 75, 24, 22)
-  fill(ctx, '#c62a2f', 13, 75, 24, 3)
-  for (let row = 0; row < 4; row++) {
-    fill(ctx, '#6f7a75', 15, 81 + row * 4, 12, 1)
-    fill(ctx, '#1d3a78', 29, 81 + row * 4, 6, 1)
   }
 
   if (rain) drawRain(ctx, time, 50)
