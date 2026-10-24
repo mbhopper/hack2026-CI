@@ -23,7 +23,7 @@ export function rng(seed: number) {
   }
 }
 
-function offscreen(width: number, height: number) {
+export function offscreen(width: number, height: number) {
   const canvas = document.createElement('canvas')
   canvas.width = width
   canvas.height = height

@@ -1,46 +1,60 @@
-import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { Button } from '../components/Button.tsx'
 import { GameHeader } from '../components/GameHeader.tsx'
 import { PageShell } from '../components/PageShell.tsx'
-import { drawCrashSite } from '../game/crashSite.ts'
+import { PixelSprite } from '../components/PixelSprite.tsx'
+import { closeUp, sceneDrawers } from '../game/locations.ts'
+import { locationDone, locationOpen, resumeRoute } from '../game/progress.ts'
 import { H, W } from '../game/scenery.ts'
-import { clueById, cluesAt, locations } from '../game/story.ts'
+import { clueById, cluesAt, locations, type Location } from '../game/story.ts'
 import { useGame } from '../game/useGame.ts'
 import { routes } from '../routes.ts'
-import './TrackPage.css'
+import './LocationPage.css'
 
 const pct = (value: number, total: number) => `${(value / total) * 100}%`
-const place = locations.find((location) => location.id === 'track')!
-const clues = cluesAt('track')
 
-export function TrackPage() {
+/** /inspect/:id — проверяем, что место существует и уже открыто */
+export function LocationRoute() {
+  const { id } = useParams()
+  const { state } = useGame()
+  const place = locations.find((location) => location.id === id)
+  if (!place || !locationOpen(state, place.id)) return <Navigate to={resumeRoute(state)} replace />
+  // key: при переходе в другое место выбранная улика сбрасывается
+  return <LocationPage key={place.id} place={place} />
+}
+
+function LocationPage({ place }: { place: Location }) {
   const { state, dispatch } = useGame()
   const navigate = useNavigate()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const clues = cluesAt(place.id)
   const examined = state.found
 
   useEffect(() => {
     const ctx = canvasRef.current?.getContext('2d')
     if (!ctx) return
+    const draw = sceneDrawers[place.id]
     ctx.imageSmoothingEnabled = false
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      drawCrashSite(ctx, 0, false)
+      draw(ctx, 0, false)
       return
     }
     let raf = 0
     const loop = (now: number) => {
-      drawCrashSite(ctx, now / 1000)
+      draw(ctx, now / 1000, true)
       raf = requestAnimationFrame(loop)
     }
     raf = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(raf)
-  }, [])
+  }, [place.id])
 
   const active = activeId ? clueById(activeId) : undefined
+  const zoom = useMemo(() => (active?.spot ? closeUp(place.id, active.spot) : null), [active, place.id])
   const foundCount = clues.filter((clue) => examined.includes(clue.id)).length
   const allFound = foundCount === clues.length
+  const next = locations[locations.findIndex((location) => location.id === place.id) + 1]
 
   const examine = (id: string) => {
     setActiveId(id)
@@ -50,6 +64,29 @@ export function TrackPage() {
   return (
     <PageShell fadedTrack headerSlot={<GameHeader label="Спустя два дня" />}>
       <div className="site">
+        <nav className="site__places" aria-label="Места для осмотра">
+          {locations.map((location) => {
+            const done = locationDone(state, location.id)
+            if (!locationOpen(state, location.id)) {
+              return (
+                <span key={location.id} className="site__place site__place--locked" title="Сначала закончите осмотр">
+                  {location.title}
+                </span>
+              )
+            }
+            return (
+              <Link
+                key={location.id}
+                to={routes.inspect(location.id)}
+                className={`site__place${done ? ' site__place--done' : ''}`}
+                aria-current={location.id === place.id ? 'page' : undefined}
+              >
+                {location.title}
+              </Link>
+            )
+          })}
+        </nav>
+
         <div className="site__intro">
           <h1 className="site__title">{place.title}</h1>
           <p className="site__lead">{place.lead}</p>
@@ -80,18 +117,28 @@ export function TrackPage() {
         <div className="site__panels">
           <section className="site__note" aria-live="polite">
             {active ? (
-              <>
-                <h2>{active.title}</h2>
-                <p>{active.note}</p>
-              </>
+              <div className="site__clue">
+                {zoom && (
+                  <PixelSprite
+                    className="site__closeup"
+                    sprite={zoom}
+                    scale={Math.max(2, Math.floor(240 / zoom.width))}
+                    label={`Крупный план: ${active.title}`}
+                  />
+                )}
+                <div>
+                  <h2>{active.title}</h2>
+                  <p>{active.note}</p>
+                </div>
+              </div>
             ) : (
-              <p className="site__placeholder">Выберите метку на трассе, чтобы осмотреть место.</p>
+              <p className="site__placeholder">Выберите метку, чтобы рассмотреть её поближе.</p>
             )}
           </section>
 
           <section className="site__notebook">
             <h2>
-              Метки на трассе <span>{foundCount}/{clues.length}</span>
+              Найдено здесь <span>{foundCount}/{clues.length}</span>
             </h2>
             <ul>
               {clues.map((clue) => (
@@ -106,8 +153,12 @@ export function TrackPage() {
                 </li>
               ))}
             </ul>
-            <Button block disabled={!allFound} onClick={() => navigate(routes.suspects)}>
-              К подозреваемым
+            <Button
+              block
+              disabled={!allFound}
+              onClick={() => navigate(next ? routes.inspect(next.id) : routes.suspects)}
+            >
+              {next ? `Дальше: ${next.title}` : 'К подозреваемым'}
             </Button>
             {!allFound && <p className="site__hint">Сначала осмотрите все метки</p>}
           </section>

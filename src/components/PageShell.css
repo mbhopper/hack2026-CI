@@ -69,3 +69,11 @@
     text-align: left;
   }
 }
+
+/* в игре справа блокнот и выход: на узком экране переносим их под логотип */
+@media (max-width: 480px) {
+  .shell__header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}

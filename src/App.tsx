@@ -4,7 +4,7 @@ import { LoginPage } from './pages/LoginPage.tsx'
 import { RegisterPage } from './pages/RegisterPage.tsx'
 import { PlayPage } from './pages/PlayPage.tsx'
 import { IntroPage } from './pages/IntroPage.tsx'
-import { TrackPage } from './pages/TrackPage.tsx'
+import { LocationRoute } from './pages/LocationPage.tsx'
 import { SuspectsPage } from './pages/SuspectsPage.tsx'
 import { InterrogationPage } from './pages/InterrogationPage.tsx'
 import { RequireAuth } from './auth/RequireAuth.tsx'
@@ -37,13 +37,15 @@ export default function App() {
           }
         />
         <Route
-          path={routes.track}
+          path={routes.inspect(':id')}
           element={
             <RequireAuth>
-              <TrackPage />
+              <LocationRoute />
             </RequireAuth>
           }
         />
+        {/* старый адрес осмотра из первой версии */}
+        <Route path="/track" element={<Navigate to={routes.inspect('track')} replace />} />
         <Route
           path={routes.suspects}
           element={

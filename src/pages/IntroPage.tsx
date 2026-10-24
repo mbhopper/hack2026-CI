@@ -16,7 +16,7 @@ export function IntroPage() {
       seen={state.introSeen}
       onFinish={() => {
         dispatch({ type: 'introSeen' })
-        navigate(routes.track)
+        navigate(routes.inspect('track'))
       }}
     />
   )

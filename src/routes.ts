@@ -6,8 +6,8 @@ export const routes = {
   play: '/play',
   /** Катсцена, с которой начинается игра после входа */
   intro: '/intro',
-  /** Осмотр места аварии через два дня */
-  track: '/track',
+  /** Осмотр места: трасса, бокс №7 или VIP-ложа */
+  inspect: (location: string) => `/inspect/${location}`,
   /** Карусель подозреваемых */
   suspects: '/suspects',
   /** Допрос выбранного подозреваемого */
